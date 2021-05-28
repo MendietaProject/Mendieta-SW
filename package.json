@@ -1,0 +1,27 @@
+{
+  "name": "mendietaapi",
+  "version": "1.0.0",
+  "description": "RESTful API for the Mendieta project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IanBuceta/MendietaAPI.git"
+  },
+  "author": "Buceta Sbrizza Ian Manuel",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IanBuceta/MendietaAPI/issues"
+  },
+  "homepage": "https://github.com/IanBuceta/MendietaAPI#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
