@@ -1,12 +1,26 @@
-var index = 1;
 $(document).ready( function () {
-    $('#table_id').DataTable({
+    var table = $('#table_id').DataTable({
         "ajax": "doc.JSON",
         "columns": [
             {   "data"  :   "index" },
             {   "data"  :   "name"  },
             {   "data"  :   "members"  },
-            {   "data"  :   "size"  }
-        ]
+            {   "data"  :   "size"  },
+            { "defaultContent" : "<button class=\"modify\">Modificar Prioridad</button><button class=\"delete\">Eliminar</button>"
+        }]
     });
+
+    $('#table_id tbody').on( 'click', 'button', function () {
+ 
+        var action = this.className; 
+        var data = table.row( $(this).parents('tr') ).data();
+        console.log(action);
+        
+        if(action==='modify'){
+            
+        }
+        if(action === 'delete'){
+            table.row( $(this).parents('tr')).remove().draw();
+        }
+    } );
 } );
