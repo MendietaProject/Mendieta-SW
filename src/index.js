@@ -1,5 +1,6 @@
 $(document).ready( function () {
     var table = $('#table_id').DataTable({
+        
         "ajax": "doc.JSON",
         "columns": [
             {   "data"  :   "index" },
@@ -7,7 +8,11 @@ $(document).ready( function () {
             {   "data"  :   "members"  },
             {   "data"  :   "size"  },
             { "defaultContent" : "<button class=\"modify\">Modificar Prioridad</button><button class=\"delete\">Eliminar</button>"
-        }]
+        }],
+        rowReorder:{
+            dataSrc: "index"
+        },
+        responsive: true
     });
 
     $('#table_id tbody').on( 'click', 'button', function () {
