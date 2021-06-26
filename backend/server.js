@@ -1,7 +1,4 @@
-const program = require('./Model/programModel');
-const team = require('./Model/teamModel');
-const student = require('./Model/studentModel');
-const teamRoutes = require('./Routes/teamRoutes');
+const workQueueRoutes = require('./Routes/workQueueRoutes');
 
 const express = require('express'),
     app = express(),
@@ -12,7 +9,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
-let tmRoutes = teamRoutes(app);
+let wkQueueRoutes = workQueueRoutes(app);
 
 
 app.listen(port);
