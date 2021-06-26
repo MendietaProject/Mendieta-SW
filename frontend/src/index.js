@@ -9,7 +9,7 @@ $(document).ready( function () {
             {   "data"  :   "name"  },
             {   "data"  :   "members"  },
             {   "data"  :   "size"  },
-            { "defaultContent" : "<button class=\"modify\">Modificar Prioridad</button><button class=\"delete\">Eliminar</button>"
+            { "defaultContent" : "<button class=\"details\">Mostrar Detalles</button><button class=\"delete\">Eliminar</button>"
         }],
         responsive: true
     });
