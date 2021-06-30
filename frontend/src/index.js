@@ -1,6 +1,8 @@
 $(document).ready( function () {
     var table = $('#table_id').DataTable({
-        "ajax": "doc.JSON",
+        "ajax": {url:"http://localhost:3000/work-queue",
+         dataSrc:''
+    },
         rowReorder:{
             dataSrc: "index"
         }, //TODO: I need to store the original index and display it in the datatable
