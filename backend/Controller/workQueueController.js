@@ -38,7 +38,7 @@ function workQueueController() {
             }
             let jsonData = JSON.parse(data);
             jsonData.push(req.body);
-            jsonData.sort((a, b) => a.id - b.id);
+            //jsonData.sort((a, b) => a.id - b.id);
             fs.writeFileSync(path, JSON.stringify(jsonData));
         });
         res.send(req.body);
