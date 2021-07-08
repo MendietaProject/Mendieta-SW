@@ -1,4 +1,3 @@
-const { json } = require('body-parser');
 const fs = require('fs');
 
 // TODO: MIRAR ASYNC
