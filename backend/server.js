@@ -1,12 +1,24 @@
 const workQueueRoutes = require('./Routes/workQueueRoutes');
+const staticPageRoutes = require('./Routes/staticPageRoutes');
 
 const express = require('express'),
     app = express(),
     port = process.env.PORT || 3000;
 
-const bodyParser = require('body-parser');
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+// TODO: CHECK IF ALL THESE ARE NECESSARY
+app.use(express.static("../frontend/"));
+app.use(express.static("../frontend/Bootstrap"));
+app.use(express.static("../frontend/DataTables-1.10.24"));
+app.use(express.static("../frontend/jQuery-3.3.1"));
+app.use(express.static("../frontend/Responsive-2.2.8"));
+app.use(express.static("../frontend/RowReorder-1.2.8"));
+app.use(express.static("../frontend/src"));
+
+
 
 // Configurar cabeceras y cors
 app.use((req, res, next) => {
@@ -19,6 +31,7 @@ app.use((req, res, next) => {
 
 
 let wkQueueRoutes = workQueueRoutes(app);
+let sticPageRoutes = staticPageRoutes(app);
 
 
 app.listen(port);
