@@ -44,8 +44,9 @@ $(document).ready( function () {
             $.ajax({
                 url: "http://localhost:3000/work-queue/" + data.id,
                 type: "DELETE",
-                succes: function(result){
+                success: function(result){
                     console.log("Succesfully Deleted " + result);
+                    table.ajax.reload();
                 }
             })
         }
