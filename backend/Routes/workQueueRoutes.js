@@ -10,7 +10,8 @@ function workQueueRoutes(app) {
 
     app.route('/work-queue/:teamId')
         .get(wkQueueController.getById)
-        .delete(wkQueueController.deleteById);
+        .delete(wkQueueController.deleteById)
+        .patch(wkQueueController.patch);
     return result;
 }
 module.exports = workQueueRoutes;
