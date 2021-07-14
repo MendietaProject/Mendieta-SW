@@ -6,55 +6,42 @@ function workQueueIO() {
     fs.mkdirSync(path.dirname(file), {recursive: true});
     let result = {};
 
-    function execute(func) {
+    function read(func) {
       try {
-        let data = fs.readFileSync(file);
-        func(null, data);
+        return func(JSON.parse(fs.readFileSync(file)));
       } catch (err) {
         if (err.code == "ENOENT") {
-          fs.writeFileSync(file, "[]");
-          func(null, "[]");
-          return;
+          return func(write([]));
         }
         throw err;
       }
     }
 
-    result.getAll = (res) => {
-        const func = (error, data) => {
-            if (!error) {
-                res.send(JSON.parse(data));
-                return;
-            }
-            res.send(JSON.parse('{}'));
-        }
-        execute(func);
+    function write(data) {
+      fs.writeFileSync(file, JSON.stringify(data));
+      return data;
     }
 
+    result.getAll = (res) => {
+        read(data => res.send(JSON.stringify(data)));
+    }
 
     result.getById = (id, res) => {
-        const func = (error, data) => {
-            if (!error) {
-                let jsonData = JSON.parse(data);
-                team = jsonData.find(team => team.id == id);
-                if (team === undefined) team = "Team with solicited id not found";
-                res.send(team);
-                return;
-            }
-            res.send(JSON.parse('{}'));
-        }
-        execute(func);
+        read(data => {
+          team = data.find(team => team.id == id);
+          if (team === undefined) {
+            team = "Team with solicited id not found"; // TODO(Richo): Proper error handling!
+          }
+          res.send(team);
+        });
     }
 
     result.write = (entity, res) => {
-        const func = (error, data) => {
-            let jsonData = [];
-            if (!error) jsonData = JSON.parse(data);
-            jsonData.push(entity);
-            fs.writeFileSync(file, JSON.stringify(jsonData));
-            res.send(entity);
-        }
-        execute(func);
+        read(data => {
+          data.push(entity);
+          write(data);
+          res.send(entity);
+        });
     }
 
     result.deleteFile = (res) => {
@@ -63,52 +50,35 @@ function workQueueIO() {
             res.send("File deleted");
         }
         catch (e) {
-            res.send("File doesn't exist");
+            res.send("File doesn't exist"); // TODO(Richo): Proper error handling!
         }
     }
 
     result.deleteById = (id, res) => {
-        const func = (error, data) => {
-            if (!error) {
-                jsonData = JSON.parse(data);
-                team = jsonData.find(team => team.id == id);
-                if (team === undefined) {
-                    team = "Team with solicited id not found";
-                }
-                else {
-                    team = jsonData.splice(jsonData.indexOf(team), 1);
-                    fs.unlinkSync(file);
-                    if (jsonData.length != 0) {
-                        fs.writeFileSync(file, JSON.stringify(jsonData));
-                    }
-                }
-                res.send(team);
-                return;
-            }
-            res.send(data);
-        }
-        execute(func);
+        read(data => {
+          team = data.find(team => team.id == id);
+          if (team === undefined) {
+              team = "Team with solicited id not found"; // TODO(Richo): Proper error handling!
+          } else {
+              team = data.splice(data.indexOf(team), 1);
+              write(data);
+          }
+          res.send(team);
+        });
     }
 
     result.patch = (id, entity, res) => {
-        const func = (error, data) => {
-            if (!error) {
-                jsonData = JSON.parse(data);
-                team = jsonData.find(team => team.id == id);
-                if (team === undefined) {
-                    team = "Team with solicited id not found";
-                }
-                else {
-                    jsonData[jsonData.indexOf(team)] = entity;
-                    fs.unlinkSync(file);
-                    fs.writeFileSync(file, JSON.stringify(jsonData));
-                }
-                res.send(team);
-                return;
+        read(data => {
+            team = data.find(team => team.id == id);
+            if (team === undefined) {
+                team = "Team with solicited id not found"; // TODO(Richo): Proper error handling!
             }
-            res.send(data);
-        }
-        execute(func);
+            else {
+                data[data.indexOf(team)] = entity;
+                write(data);
+            }
+            res.send(team);
+        });
     }
 
     return result;
