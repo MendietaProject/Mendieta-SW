@@ -8,6 +8,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static("../frontend/src"));
+app.use(express.static("../physicalbits/gui"));
 
 let wkQueueRoutes = workQueueRoutes(app);
 
