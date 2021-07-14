@@ -1,12 +1,23 @@
 const fs = require('fs');
-const { parse } = require('path');
+const path = require('path');
 
 function workQueueIO() {
-    const path = "./Files/workTeams.json";
+    const file = path.join(__dirname, "../Files/workTeams.json");
+    fs.mkdirSync(path.dirname(file), {recursive: true});
     let result = {};
 
     function execute(func) {
-        fs.readFile(path, func);
+      try {
+        let data = fs.readFileSync(file);
+        func(null, data);
+      } catch (err) {
+        if (err.code == "ENOENT") {
+          fs.writeFileSync(file, "[]");
+          func(null, "[]");
+          return;
+        }
+        throw err;
+      }
     }
 
     result.getAll = (res) => {
@@ -40,16 +51,15 @@ function workQueueIO() {
             let jsonData = [];
             if (!error) jsonData = JSON.parse(data);
             jsonData.push(entity);
-            fs.writeFileSync(path, JSON.stringify(jsonData));
+            fs.writeFileSync(file, JSON.stringify(jsonData));
             res.send(entity);
         }
         execute(func);
-
     }
 
     result.deleteFile = (res) => {
         try {
-            fs.unlinkSync(path);
+            fs.unlinkSync(file);
             res.send("File deleted");
         }
         catch (e) {
@@ -67,9 +77,9 @@ function workQueueIO() {
                 }
                 else {
                     team = jsonData.splice(jsonData.indexOf(team), 1);
-                    fs.unlinkSync(path);
+                    fs.unlinkSync(file);
                     if (jsonData.length != 0) {
-                        fs.writeFileSync(path, JSON.stringify(jsonData));
+                        fs.writeFileSync(file, JSON.stringify(jsonData));
                     }
                 }
                 res.send(team);
@@ -90,8 +100,8 @@ function workQueueIO() {
                 }
                 else {
                     jsonData[jsonData.indexOf(team)] = entity;
-                    fs.unlinkSync(path);
-                    fs.writeFileSync(path, JSON.stringify(jsonData));
+                    fs.unlinkSync(file);
+                    fs.writeFileSync(file, JSON.stringify(jsonData));
                 }
                 res.send(team);
                 return;
