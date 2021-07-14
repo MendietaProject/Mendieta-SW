@@ -6,27 +6,27 @@ function workQueueController() {
     let wkQueueIO = workQueueIO();
 
     result.getAll = (req, res) => {
-        wkQueueIO.getAll(res);
+        res.send(wkQueueIO.getAll());
     }
 
     result.getById = (req, res) => {
-        wkQueueIO.getById(req.params.teamId, res);
+        res.send(wkQueueIO.getById(req.params.teamId));
     }
 
     result.put = (req, res) => {
-        wkQueueIO.write(req.body, res);
+        res.send(wkQueueIO.write(req.body));
     }
 
     result.delete = (req, res) => {
-        wkQueueIO.deleteFile(res);
+        res.send(wkQueueIO.deleteFile());
     }
 
     result.deleteById = (req, res) => {
-        wkQueueIO.deleteById(req.params.teamId, res);
+        res.send(wkQueueIO.deleteById(req.params.teamId));
     }
 
     result.patch = (req, res) => {
-        wkQueueIO.patch(req.params.teamId, req.body, res)
+        res.send(wkQueueIO.patch(req.params.teamId, req.body));
     }
 
     return result;
