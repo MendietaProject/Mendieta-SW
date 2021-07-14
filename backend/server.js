@@ -1,5 +1,4 @@
 const workQueueRoutes = require('./Routes/workQueueRoutes');
-const staticPageRoutes = require('./Routes/staticPageRoutes');
 
 const express = require('express'),
     app = express(),
@@ -11,7 +10,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("../frontend/src"));
 
 let wkQueueRoutes = workQueueRoutes(app);
-let sticPageRoutes = staticPageRoutes(app);
 
 app.listen(port);
 
