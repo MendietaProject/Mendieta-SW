@@ -8,7 +8,7 @@ function buildButtons(){
 
 $(document).ready( function () {
     var table = $('#table_id').DataTable({
-        "ajax": {url:"http://localhost:3000/work-queue",
+        "ajax": {url: "/work-queue",
          dataSrc:''
     },
         /*rowReorder:{
@@ -32,17 +32,17 @@ $(document).ready( function () {
     table.on( 'row-reorder', function ( e, details, edit ) {
         console.log( details );
     } );
-    
+
     table.on( 'click', 'button', function () {
-        var action = this.className; 
+        var action = this.className;
         var data = table.row( $(this).parents('tr') ).data();
         console.log(action);
         console.log(data);
-        
+
         if(action === 'delete'){ //get data, modify table
             console.log("Numero de ID en la clase: " + data);
             $.ajax({
-                url: "http://localhost:3000/work-queue/" + data.id,
+                url: "/work-queue/" + data.id,
                 type: "DELETE",
                 success: function(result){
                     console.log("Succesfully Deleted " + result);
