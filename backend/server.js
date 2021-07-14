@@ -36,4 +36,4 @@ let sticPageRoutes = staticPageRoutes(app);
 
 app.listen(port);
 
-console.log(`RESTful API server started on: http://localhost:/${port}`);
+console.log(`RESTful API server started on: http://localhost:${port}`);
