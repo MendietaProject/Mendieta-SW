@@ -3,7 +3,6 @@ const path = require('path');
 
 function workQueueIO() {
     const file = path.join(__dirname, "../Files/workTeams.json");
-    fs.mkdirSync(path.dirname(file), {recursive: true});
     let result = {};
 
     function read(func) {
@@ -11,6 +10,7 @@ function workQueueIO() {
         return func(JSON.parse(fs.readFileSync(file)));
       } catch (err) {
         if (err.code == "ENOENT") {
+          fs.mkdirSync(path.dirname(file), {recursive: true});
           return func(write([]));
         }
         throw err;
