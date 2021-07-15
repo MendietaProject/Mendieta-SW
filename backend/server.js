@@ -1,4 +1,4 @@
-const workQueueRoutes = require('./Routes/workQueueRoutes');
+const workQueueController = require('./controller/workQueueController');
 
 const express = require('express'),
     app = express(),
@@ -10,7 +10,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("../frontend/src"));
 app.use(express.static("../physicalbits/gui"));
 
-let wkQueueRoutes = workQueueRoutes(app);
+workQueueController(app);
 
 app.listen(port);
 

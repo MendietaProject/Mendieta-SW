@@ -1,25 +1,27 @@
 const fs = require('fs');
+const { v4: uuid } = require('uuid');
 const path = require('path');
+const requestError = require('../controller/requestError');
 
-function workQueueIO() {
-    const file = path.join(__dirname, "../Files/workTeams.json");
+function workQueueStorage() {
+    const file = path.join(__dirname, "../files/workTeams.json");
     let result = {};
 
     function read() {
-      try {
-        return JSON.parse(fs.readFileSync(file));
-      } catch (err) {
-        if (err.code == "ENOENT") {
-          fs.mkdirSync(path.dirname(file), {recursive: true});
-          return write([]);
+        try {
+            return JSON.parse(fs.readFileSync(file));
+        } catch (err) {
+            if (err.code == "ENOENT") {
+                fs.mkdirSync(path.dirname(file), { recursive: true });
+                return write([]);
+            }
+            throw err;
         }
-        throw err;
-      }
     }
 
     function write(data) {
-      fs.writeFileSync(file, JSON.stringify(data));
-      return data;
+        fs.writeFileSync(file, JSON.stringify(data));
+        return data;
     }
 
     result.getAll = () => {
@@ -30,13 +32,14 @@ function workQueueIO() {
         const data = read();
         team = data.find(team => team.id == id);
         if (team === undefined) {
-          team = "Team with solicited id not found"; // TODO(Richo): Proper error handling!
+            throw new requestError("Team with solicited id not found", 404);
         }
         return team;
     }
 
     result.write = (entity) => {
         const data = read();
+        entity["id"] = uuid()
         data.push(entity);
         write(data);
         return entity;
@@ -46,8 +49,8 @@ function workQueueIO() {
         try {
             fs.unlinkSync(file);
             return "File deleted";
-        } catch (e) {
-            return "File doesn't exist"; // TODO(Richo): Proper error handling!
+        } catch (err) {
+            throw new requestError("File doesn't exist", 404);
         }
     }
 
@@ -55,7 +58,7 @@ function workQueueIO() {
         const data = read();
         team = data.find(team => team.id == id);
         if (team === undefined) {
-            team = "Team with solicited id not found"; // TODO(Richo): Proper error handling!
+            throw new requestError("Team with solicited id not found", 404);
         } else {
             team = data.splice(data.indexOf(team), 1);
             write(data);
@@ -67,8 +70,9 @@ function workQueueIO() {
         const data = read();
         team = data.find(team => team.id == id);
         if (team === undefined) {
-            team = "Team with solicited id not found"; // TODO(Richo): Proper error handling!
+            throw new requestError("Team with solicited id not found", 404);
         } else {
+            entity["id"] = id;
             data[data.indexOf(team)] = entity;
             write(data);
         }
@@ -77,5 +81,4 @@ function workQueueIO() {
 
     return result;
 }
-
-module.exports = workQueueIO;
+module.exports = workQueueStorage;

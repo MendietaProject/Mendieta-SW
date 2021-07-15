@@ -1,34 +1,73 @@
-const workQueueIO = require('../IO/workQueueIO');
+const workQueueStorage = require('../storage/workQueueStorage');
+const requestError = require('./requestError')
 
-function workQueueController() {
+function workQueueController(app) {
 
-    let result = {}
-    let wkQueueIO = workQueueIO();
+    const wkQueueStorage = workQueueStorage();
 
-    result.getAll = (req, res) => {
-        res.send(wkQueueIO.getAll());
+    app.route('/work-queue')
+        .get(getAll)
+        .put(put)
+        .delete(deleteQueue);
+
+    app.route('/work-queue/:teamId')
+        .get(getById)
+        .delete(deleteById)
+        .patch(patch);
+
+    function handleError(res, err) {
+        res.status(500);
+        if (err instanceof requestError)
+            res.status(err.statusCode);
+        res.send(JSON.stringify(`${err.name}: ${err.message}`));
     }
 
-    result.getById = (req, res) => {
-        res.send(wkQueueIO.getById(req.params.teamId));
+    function getAll(req, res) {
+        try {
+            res.send(wkQueueStorage.getAll());
+        } catch (err) {
+            handleError(res, err);
+        }
     }
 
-    result.put = (req, res) => {
-        res.send(wkQueueIO.write(req.body));
+    function getById(req, res) {
+        try {
+            res.send(wkQueueStorage.getById(req.params.teamId));
+        } catch (err) {
+            handleError(res, err);
+        }
     }
 
-    result.delete = (req, res) => {
-        res.send(wkQueueIO.deleteFile());
+    function put(req, res) {
+        try {
+            res.send(wkQueueStorage.write(req.body));
+        } catch (err) {
+            handleError(res, err);
+        }
     }
 
-    result.deleteById = (req, res) => {
-        res.send(wkQueueIO.deleteById(req.params.teamId));
+    function deleteQueue(req, res) {
+        try {
+            res.send(wkQueueStorage.deleteFile());
+        } catch (err) {
+            handleError(res, err);
+        }
     }
 
-    result.patch = (req, res) => {
-        res.send(wkQueueIO.patch(req.params.teamId, req.body));
+    function deleteById(req, res) {
+        try {
+            res.send(wkQueueStorage.deleteById(req.params.teamId));
+        } catch (err) {
+            handleError(res, err);
+        }
     }
 
-    return result;
+    function patch(req, res) {
+        try {
+            res.send(wkQueueStorage.patch(req.params.teamId, req.body));
+        } catch (err) {
+            handleError(res, err);
+        }
+    }
 }
 module.exports = workQueueController;
