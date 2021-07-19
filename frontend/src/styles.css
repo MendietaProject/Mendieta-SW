@@ -71,3 +71,7 @@ body {
     margin: 0 auto;
     transform: scale(.4);
   }
+
+  .nav{
+    display: block;
+  }
