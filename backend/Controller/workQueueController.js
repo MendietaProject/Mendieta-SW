@@ -1,9 +1,11 @@
-const workQueueStorage = require('../storage/workQueueStorage');
-const requestError = require('./requestError')
+const WorkQueueStorage = require('../storage/workQueueStorage');
+const { v4: uuid } = require('uuid');
+const storageError = require('../storage/storageError');
 
 function workQueueController(app) {
 
-    const wkQueueStorage = workQueueStorage();
+    // TODO (IAN): Sometime in the future change passed parameter 
+    const wkQueueStorage = new WorkQueueStorage('workTeams');
 
     app.route('/work-queue')
         .get(getAll)
@@ -17,7 +19,7 @@ function workQueueController(app) {
 
     function handleError(res, err) {
         res.status(500);
-        if (err instanceof requestError)
+        if (err instanceof storageError)
             res.status(err.statusCode);
         res.send(JSON.stringify(`${err.name}: ${err.message}`));
     }
@@ -40,7 +42,7 @@ function workQueueController(app) {
 
     function put(req, res) {
         try {
-            res.send(wkQueueStorage.write(req.body));
+            res.send(wkQueueStorage.add(req.body));
         } catch (err) {
             handleError(res, err);
         }
@@ -64,7 +66,7 @@ function workQueueController(app) {
 
     function patch(req, res) {
         try {
-            res.send(wkQueueStorage.patch(req.params.teamId, req.body));
+            res.send(wkQueueStorage.modify(req.params.teamId, req.body));
         } catch (err) {
             handleError(res, err);
         }
