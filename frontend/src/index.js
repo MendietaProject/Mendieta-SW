@@ -1,12 +1,49 @@
-function buildButtons(){
-    /*let button = $("<button>");
-    button.text("Borrar");
-    return button;*/
-    let button = $("<button>Borrar</button>")
-    return button;
-}
 
 $(document).ready(function () {
+
+  initActivityChooser();
+
+});
+
+
+function initActivityChooser() {
+  // TODO(Richo): Disable form after submission (re-enable on complete)
+  $("#create-activity-form").on("submit", function (e) {
+    e.preventDefault();
+
+    let activity = {
+      name: $("#activity-name").val()
+    };
+
+    $.ajax({
+      url: "/activities/current",
+      type: "POST",
+      data: activity,
+      success: function (result) {
+        initMainScreen(result);
+        $("#activity-selector").hide();
+      }
+    })
+  });
+
+
+  $.ajax({
+    url: "/activities/current",
+    type: "GET",
+    success: function (result) {
+      if (result == "") {
+        // NO HAY ACTIVIDAD
+        $("#activity-selector").show();
+      } else {
+        initMainScreen(result);
+      }
+    }
+  })
+}
+
+// TODO(Richo): Pensar mejor nombre!
+function initMainScreen(currentActivity) {
+  $("#main-screen").show();
   const table = $('#table_id').DataTable({
     ajax: {
       url: "/work-queue",
@@ -50,4 +87,4 @@ $(document).ready(function () {
       })
     }
   });
-});
+}
