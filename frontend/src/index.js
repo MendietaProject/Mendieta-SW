@@ -24,6 +24,7 @@ function initActivityChooser() {
         $("#activity-selector").hide();
       }
     })
+    document.getElementById("titulo-actividad").innerText = activity.name
   });
 
 
