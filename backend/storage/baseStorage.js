@@ -8,20 +8,20 @@ class BaseStorage {
         this.file = path.join(__dirname, `../files/${fileName}.json`);
     }
 
-    read() {
+    async read() {
         try {
-            return JSON.parse(fs.readFileSync(this.file));
+            return await JSON.parse(fs.promises.readFile(this.file));
         } catch (err) {
             if (err.code == "ENOENT") {
-                fs.mkdirSync(path.dirname(this.file), { recursive: true });
+                await fs.promises.mkdir(path.dirname(this.file), { recursive: true });
                 return this.write([]);
             }
             throw err;
         }
     }
 
-    write(data) {
-        fs.writeFileSync(this.file, JSON.stringify(data));
+    async write(data) {
+        await fs.writeFile.promises.writeFile(this.file, JSON.stringify(data));
         return data;
     }
 
@@ -46,9 +46,9 @@ class BaseStorage {
         return entity;
     }
 
-    deleteFile() {
+    async deleteFile() {
         try {
-            fs.unlinkSync(this.file);
+            await fs.promises.unlink(this.file);
             return "File deleted";
         } catch (err) {
             throw new storageError("File doesn't exist", 404);
