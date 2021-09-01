@@ -6,7 +6,8 @@ const express = require('express'),
     port = process.env.PORT || 3000;
 
 const serverState = {
-  currentActivity: null,
+  activities: [],
+  currentActivity: null
 };
 
 app.use(express.json());
