@@ -24,49 +24,49 @@ function workQueueController(app) {
         res.send(JSON.stringify(`${err.name}: ${err.message}`));
     }
 
-    function getAll(req, res) {
+    async function getAll(req, res) {
         try {
-            res.send(wkQueueStorage.getAll());
+            res.send(await wkQueueStorage.getAll());
         } catch (err) {
             handleError(res, err);
         }
     }
 
-    function getById(req, res) {
+    async function getById(req, res) {
         try {
-            res.send(wkQueueStorage.getById(req.params.teamId));
+            res.send(await wkQueueStorage.getById(req.params.teamId));
         } catch (err) {
             handleError(res, err);
         }
     }
 
-    function put(req, res) {
+    async function put(req, res) {
         try {
-            res.send(wkQueueStorage.add(req.body));
+            res.send(await wkQueueStorage.add(req.body));
         } catch (err) {
             handleError(res, err);
         }
     }
 
-    function deleteQueue(req, res) {
+    async function deleteQueue(req, res) {
         try {
-            res.send(wkQueueStorage.deleteFile());
+            res.send(await wkQueueStorage.deleteFile());
         } catch (err) {
             handleError(res, err);
         }
     }
 
-    function deleteById(req, res) {
+    async function deleteById(req, res) {
         try {
-            res.send(wkQueueStorage.deleteById(req.params.teamId));
+            res.send(await wkQueueStorage.deleteById(req.params.teamId));
         } catch (err) {
             handleError(res, err);
         }
     }
 
-    function patch(req, res) {
+    async function patch(req, res) {
         try {
-            res.send(wkQueueStorage.modify(req.params.teamId, req.body));
+            res.send(await wkQueueStorage.modify(req.params.teamId, req.body));
         } catch (err) {
             handleError(res, err);
         }
