@@ -1,13 +1,13 @@
-const baseStorage = require('./baseStorage');
+const BaseStorage = require('./baseStorage');
 
 // TODO: find a better name?
 
-class ActivityPointerStorage extends baseStorage {
+class ActivityPointerStorage extends BaseStorage {
     constructor(fileName) {
         super(fileName);
     }
     getById(id) {
-        let entity = super(id);
+        let entity = super.getById(id);
         let temp = this.file;
         this.file = path.join(__dirname, `../files/${entity.id}.json`);
         let result = this.read();
