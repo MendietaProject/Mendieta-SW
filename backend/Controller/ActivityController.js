@@ -11,23 +11,23 @@ function initActivityController(app, state) {
 
   app.route("/activities/current")
     .get((req, res) => {
-      // TODO(Richo): Si no hay actividad qué devolvemos?
-      res.send(state.currentActivity);
+      if (state.currentActivity) {
+        res.send(state.currentActivity);
+      } else {
+        res.sendStatus(404);
+      }
     })
     .post((req, res) => {
-      if(req.body.id)
-      {
+      if(req.body.id) {
         var activity = state.activities.find(activity => activity.id == req.body.id);
-        if(activity){
+        if(activity) {
           state.currentActivity = activity;
           res.send(activity);
-        }
-        else{
+          state.updateClients();
+        } else {
           res.sendStatus(404);
         }
-      }
-      else
-      {
+      } else {
         let activity = {
           name: req.body.name,
           id: uuid(),
@@ -36,7 +36,8 @@ function initActivityController(app, state) {
         };
         state.currentActivity = activity;
         state.activities.push(activity);
-        res.send(state.currentActivity);
+        res.send(state.currentActivity);        
+        state.updateClients();
       }
     });
 }
