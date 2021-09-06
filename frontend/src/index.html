@@ -26,7 +26,12 @@
         <button type="submit" class="btn btn-primary m-2">Iniciar Actividad</button>
     </form>
     <hr>
-    <button class="btn btn-warning m-2"><a href="index.html">Volver a cola de trabajos</a></button>
+
+    <div class="list-group" id="activities-list">
+      <button onclick="chooseActivity()" type="button" class="list-group-item list-group-item-action">
+        The current button
+      </button>
+    </div>
 
   </div>
   <div id="main-screen" class="" style="display: none;">
@@ -39,7 +44,7 @@
           <ul class="nav">
             <li>
                 <!--<img src="./icons/home.svg" class="svg" alt="Home.svg">-->
-                <a href="#">Inicio</a>
+                <button onclick="backToMenu()">Volver al inicio</button>
             </li>
             <li>
               <a href="#">Configuración</a>

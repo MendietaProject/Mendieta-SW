@@ -28,16 +28,20 @@ function initActivityController(app, state) {
           res.sendStatus(404);
         }
       } else {
-        let activity = {
-          name: req.body.name,
-          id: uuid(),
-          students: [],
-          submissions: []
-        };
-        state.currentActivity = activity;
-        state.activities.push(activity);
-        res.send(state.currentActivity);        
-        state.updateClients();
+        if(req.body.name){
+          let activity = {
+            name: req.body.name,
+            id: uuid(),
+            students: [],
+            submissions: []
+          };
+          state.currentActivity = activity;
+          state.activities.push(activity);
+          res.send(state.currentActivity);        
+          state.updateClients();
+        }else{
+          res.sendStatus(400);
+        }
       }
     });
 }
