@@ -33,12 +33,10 @@ function initActivityChooser() {
     url: "/activities/current",
     type: "GET",
     success: function (result) {
-      if (result == "") {
-        // NO HAY ACTIVIDAD
-        $("#activity-selector").show();
-      } else {
-        initMainScreen(result);
-      }
+      initMainScreen(result);
+    },
+    error: function () {
+      $("#activity-selector").show();
     }
   })
 }
