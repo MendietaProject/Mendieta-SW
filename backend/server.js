@@ -1,8 +1,12 @@
 const workQueueController = require('./controller/workQueueController');
 const initActivityController = require("./controller/ActivityController");
+const Queue = require("./utils/queue.js");
+const QueueManager = require("./uzi/queue_mgr.js");
 const ws = require("express-ws");
 
 const serverState = {
+  currentQueue: new Queue(),
+
   activities: [],
   currentActivity: null,
   clients: [],
@@ -44,11 +48,13 @@ app.ws('/updates', function(ws, req) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// TODO(Richo): This paths should be configurable
 app.use(express.static("../frontend/src"));
 app.use(express.static("../physicalbits/gui"));
 
 workQueueController(app);
 initActivityController(app, serverState);
+QueueManager.start(serverState);
 
 app.listen(port);
 
