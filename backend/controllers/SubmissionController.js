@@ -1,3 +1,4 @@
+const JSONX = require("../utils/jsonx.js");
 const { v4: uuid } = require('uuid');
 
 function handleError(fn) {
@@ -17,7 +18,7 @@ function createSubmission({author, program}) {
     id: uuid(),
     state: "PENDING", // TODO(Richo): Make enum?
     author: author,
-    program: program,
+    program: JSONX.parse(program),
   };
   // TODO(Richo): With a class this would be much simpler...
   submission.finalizationToken = new Promise(res => {
