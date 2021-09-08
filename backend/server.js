@@ -1,5 +1,5 @@
-const workQueueController = require('./controller/workQueueController');
-const initActivityController = require("./controller/ActivityController");
+const workQueueController = require('./controllers/workQueueController');
+const initActivityController = require("./controllers/ActivityController");
 const Queue = require("./utils/queue.js");
 const QueueManager = require("./uzi/queue_mgr.js");
 const ws = require("express-ws");

@@ -4,7 +4,7 @@ const storageError = require('../storage/storageError');
 
 function workQueueController(app) {
 
-    // TODO (IAN): Sometime in the future change passed parameter 
+    // TODO (IAN): Sometime in the future change passed parameter
     const wkQueueStorage = new WorkQueueStorage('workTeams');
 
     app.route('/work-queue')
