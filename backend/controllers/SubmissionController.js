@@ -1,12 +1,8 @@
-const WorkQueueStorage = require('../storage/workQueueStorage');
 const { v4: uuid } = require('uuid');
-const storageError = require('../storage/storageError');
 
-function workQueueController(app) {
-
-    // TODO (IAN): Sometime in the future change passed parameter
-    const wkQueueStorage = new WorkQueueStorage('workTeams');
-
+class SubmissionController {
+  static init(app) {
+    
     app.route('/work-queue')
         .get(getAll)
         .put(put)
@@ -71,5 +67,7 @@ function workQueueController(app) {
             handleError(res, err);
         }
     }
+  }
 }
-module.exports = workQueueController;
+
+module.exports = SubmissionController;

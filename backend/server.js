@@ -1,5 +1,5 @@
-const workQueueController = require('./controllers/workQueueController');
-const initActivityController = require("./controllers/ActivityController");
+const SubmissionController = require('./controllers/SubmissionController');
+const ActivityController = require("./controllers/ActivityController");
 const Queue = require("./utils/queue.js");
 const QueueManager = require("./uzi/queue_mgr.js");
 const ws = require("express-ws");
@@ -52,8 +52,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("../frontend/src"));
 app.use(express.static("../physicalbits/gui"));
 
-workQueueController(app);
-initActivityController(app, serverState);
+SubmissionController.init(app);
+ActivityController.init(app, serverState);
 QueueManager.start(serverState);
 
 app.listen(port);
