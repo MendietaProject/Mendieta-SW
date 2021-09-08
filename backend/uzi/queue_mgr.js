@@ -1,33 +1,36 @@
 const uzi = require("./controller.js");
 
 function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
-function log(s) { console.log(s); }
+
+let empty_program = {compiled: {"__class__": "UziProgram", "globals": [], "scripts": []}};
 
 class QueueManager {
-  static async start(serverState) {
-    log("STARTING TO WORK ON THAT QUEUE!");
-    while (true) {
-      log("NEXT SUBMISSION, PLEASE...");
-      let submission = await serverState.currentQueue.take();
-      if (submission.state != "PENDING") {
-        log("SUBMISSION IS NOT PENDING!");
-      } else {
-        log("");
-        submission.state = "ACTIVE";
-        log("SEND PROGRAM TO ARDUINO: " + submission.id);
-        log("NOTIFY USERS ACTIVE SUBMISSION: " + submission.id);
-        log("SLEEPING FOR 20s...");
-        let canceled = await Promise.race([sleep(20000), submission.finalizationToken]);
-        if (canceled) {
-          log("NOTIFY USERS CANCELED SUBMISSION: " + submission.id);
-        } else {
-          submission.state = "COMPLETED";
-          log("NOTIFY USERS COMPLETED SUBMISSION: " + submission.id);
+  static async start(server) {
+    try {
+      await uzi.connect("COM4"); // TODO(Richo): Make it configurable...
+      await uzi.run(empty_program);
+      while (true) { // TODO(Richo): While still connected?
+        let submission = await server.currentQueue.take();
+        if (submission.state == "PENDING") {
+          submission.state = "ACTIVE";
+          // TODO(Richo): Notify authors, then wait for confirmation before sending the program to the arduino
+          await uzi.run(submission.program);
+          server.updateClients();
+          // TODO(Richo): The sleep should be configurable by activity
+          let canceled = await Promise.race([sleep(20000), submission.finalizationToken]);
+          if (canceled) {
+            console.log(`Submission ${submission.id} was CANCELED!`);
+          } else {
+            submission.state = "COMPLETED";
+            console.log(`Submission ${submission.id} COMPLETED succesfully!`);
+          }
+          server.updateClients();
+          await uzi.run(empty_program);
         }
-        log("");
       }
+    } catch (err) {
+      console.error(err);
     }
-  }
-}
+  }}
 
 module.exports = QueueManager;
