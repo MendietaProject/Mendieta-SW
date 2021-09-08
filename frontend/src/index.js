@@ -47,22 +47,23 @@ function initActivityChooser() {
 function initMainScreen(currentActivity) {
   $("#main-screen").show();
   const table = $('#table_id').DataTable({
+    // TODO(Richo): Get the data directly from the websocket and update table manually?
     ajax: {
-      url: "/work-queue",
+      url: "/submissions",
       dataSrc:''
     },
     //TODO: I need to store the original index and display it in the datatable
     columns: [
-      {"data" : "id"},
-      {"data" : "name"},
-      {"data" : "members"},
-      {"data" : "size"},
-      {"defaultContent": "<button class=\"delete\">Borrar</button>"}
+      {"defaultContent": ""},
+      {"data" : "state"},
+      {"data" : "author.name"},
+      {"data" : "program.src"},
+      {"defaultContent": "<button data-action='delete'>Cancelar</button>"}
     ],
     responsive: true,
     createdRow: (row, data, index) => {
-      var name = data.id.toString();
-      $(row).addClass(name)
+      row.children[0].innerText = (index + 1).toString();
+      row.dataset.id = data.id;
       console.log(row)
     },
   });
@@ -72,22 +73,16 @@ function initMainScreen(currentActivity) {
   });
 
   table.on('click', 'button', function () {
-    var action = this.className;
+    var action = this.dataset.action;
     var data = table.row($(this).parents('tr')).data();
-    console.log(action);
-    console.log(data);
-
-    if(action === 'delete'){ //get data, modify table
-      console.log("Numero de ID en la clase: " + data);
-      $.ajax({
-        url: "/work-queue/" + data.id,
-        type: "DELETE",
-        success: function(result){
-          console.log("Succesfully Deleted " + result);
-          table.ajax.reload();
-        }
-      })
-    }
+    $.ajax({
+      url: "/submissions/" + data.id,
+      type: action,
+      success: function(result){
+        console.log("Succesfully canceled " + result);
+        table.ajax.reload();
+      }
+    })
   });
 }
 
@@ -111,7 +106,7 @@ function chooseActivity(){
           var button = $('<button type="button" class="list-group-item list-group-item-action">A second item</button>');
           $('#activities-list').append(button);
           button.text(result[i].name);
-          button.on('click', () => {   
+          button.on('click', () => {
               $.ajax({
                 url: "/activities/current",
                 type: "POST",
@@ -127,7 +122,7 @@ function chooseActivity(){
       }
     }
   })
-  
+
 }
 
 /*function saveActivity(){
