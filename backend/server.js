@@ -52,7 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("../frontend/src"));
 app.use(express.static("../physicalbits/gui"));
 
-SubmissionController.init(app);
+SubmissionController.init(app, serverState);
 ActivityController.init(app, serverState);
 QueueManager.start(serverState);
 
