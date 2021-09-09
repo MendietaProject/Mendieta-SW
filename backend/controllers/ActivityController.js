@@ -18,6 +18,15 @@ class ActivityController {
           res.sendStatus(404);
         }
       })
+      .delete((req, res) => {
+        let activity = state.currentActivity;
+        if (!activity){
+          res.sendStatus(400);
+        } else {
+          state.currentActivity = null;
+          res.sendStatus(200);
+        }
+      })
       .post((req, res) => {
         if(req.body.id) {
           var activity = state.activities.find(activity => activity.id == req.body.id);
