@@ -1,13 +1,11 @@
 
 
 $(document).ready(function () {
-
+  initActivityMaker();
   initActivityChooser();
-  chooseActivity();
 });
 
-
-function initActivityChooser() {
+function initActivityMaker() {
   // TODO(Richo): Disable form after submission (re-enable on complete)
   $("#create-activity-form").on("submit", function (e) {
     e.preventDefault();
@@ -16,29 +14,35 @@ function initActivityChooser() {
       name: $("#activity-name").val()
     };
 
-    $.ajax({
-      url: "/activities/current",
-      type: "POST",
-      data: activity,
-      success: function (result) {
-        initMainScreen(result);
-        $("#activity-selector").hide();
-      }
+    Mendieta.setCurrentActivity(activity).then(result => {
+      initMainScreen(result);
+      $("#activity-selector").hide();
     })
     document.getElementById("titulo-actividad").innerText = activity.name;
   });
 
+  Mendieta.getCurrentActivity()
+    .then(initMainScreen)
+    .catch(() => $("#activity-selector").show());
+}
 
-  $.ajax({
-    url: "/activities/current",
-    type: "GET",
-    success: function (result) {
-      initMainScreen(result);
-    },
-    error: function () {
-      $("#activity-selector").show();
+function initActivityChooser(){
+  Mendieta.getAllActivities().then(result => {
+    console.log(result);
+    $('#activities-list').html('');
+    for(let i=0; i < result.length; i++){
+      var button = $('<button type="button" class="list-group-item list-group-item-action">A second item</button>');
+      $('#activities-list').append(button);
+      button.text(result[i].name);
+      button.on('click', () => {
+        Mendieta.selectExistingActivity(result[i].id)
+          .then(result => {
+            initMainScreen(result);
+            $("#activity-selector").hide();
+          });
+        });
     }
-  })
+  });
 }
 
 // TODO(Richo): Pensar mejor nombre!
@@ -73,14 +77,13 @@ function initMainScreen(currentActivity) {
   table.on('click', 'button', function () {
     var action = this.dataset.action;
     var data = table.row($(this).parents('tr')).data();
-    $.ajax({
-      url: "/submissions/" + data.id,
-      type: action,
-      success: function(result){
-        console.log("Succesfully canceled " + result);
-        table.ajax.reload();
-      }
-    })
+    if (action == "delete") {
+      Mendieta.cancelActivity(data.id)
+        .then(result => {
+          console.log("Succesfully canceled " + result);
+          table.ajax.reload();
+        });
+    }
   });
 }
 
@@ -89,56 +92,3 @@ function backToMenu(){
   $("#main-screen").hide();
   $("#table_id").dataTable().fnDestroy();
 }
-
-function chooseActivity(){
-  $.ajax({
-    url: "/activities",
-    type: "GET",
-    success: function (result) {
-      if (result == "") {
-        // NO HAY ACTIVIDAD
-      } else {
-        console.log(result);
-        $('#activities-list').html('');
-        for(let i=0; i < result.length; i++){
-          var button = $('<button type="button" class="list-group-item list-group-item-action">A second item</button>');
-          $('#activities-list').append(button);
-          button.text(result[i].name);
-          button.on('click', () => {
-              $.ajax({
-                url: "/activities/current",
-                type: "POST",
-                data: {id: result[i].id},
-                success: function (result) {
-                  initMainScreen(result);
-                  $("#activity-selector").hide();
-                }
-              })
-            }
-          );
-        }
-      }
-    }
-  })
-
-}
-
-/*function saveActivity(){
-  console.log("Hello")
-  let activity = {
-    name: $("#activity-name").val(),
-    description: $("description").val()
-  };
-
-  $.ajax({
-    url: "/activities",
-    type: "POST",
-    data: activity,
-    success: function (result) {
-      initMainScreen(result);
-      $("#activity-selector").show();
-      $("#main-screen").hide();
-    }
-  })
-  console.log(activity.name)
-}*/
