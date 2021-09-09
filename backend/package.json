@@ -13,7 +13,7 @@
     "url": "git+https://github.com/IanBuceta/MendietaAPI.git"
   },
   "author": "Buceta Sbrizza Ian Manuel",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/IanBuceta/MendietaAPI/issues"
   },
