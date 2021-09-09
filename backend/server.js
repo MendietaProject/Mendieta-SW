@@ -4,6 +4,7 @@ const Queue = require("./utils/queue.js");
 const QueueManager = require("./uzi/queue_mgr.js");
 const ws = require("express-ws");
 
+// TODO(Richo): Make into a class
 const serverState = {
   currentQueue: new Queue(),
 
@@ -15,10 +16,7 @@ const serverState = {
     console.log("Se actualizó el servidor! " + serverState.clients.length.toString());
 
     // TODO(Richo): Qué info le tenemos que mandar a los clientes??
-    let jsonState = JSON.stringify({
-      activities: serverState.activities,
-      currentActivity: serverState.currentActivity
-    });
+    let jsonState = JSON.stringify(serverState.currentActivity);
     for (let i = 0; i < serverState.clients.length; i++) {
       let ws = serverState.clients[i];
       try {
