@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --inspect server.js",
-    "start": "node server.js"
+    "dev": "npm install && nodemon --inspect server.js",
+    "start": "npm install && node server.js"
   },
   "repository": {
     "type": "git",
