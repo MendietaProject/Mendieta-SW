@@ -42,6 +42,7 @@ class SubmissionController {
         let submission = createSubmission(body);
         server.currentActivity.submissions.push(submission);
         server.currentQueue.put(submission);
+        server.updateClients();
         res.send(submission);
       }));
 
@@ -62,6 +63,7 @@ class SubmissionController {
         let submission = submissions.find(s => s.id == id);
         if (submission) {
           submission.cancel(true);
+          server.updateClients();
           res.send(submission);
         } else {
           res.sendStatus(404);
