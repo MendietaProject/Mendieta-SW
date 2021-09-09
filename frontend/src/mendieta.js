@@ -1,6 +1,10 @@
 
 let Mendieta = (function () {
 
+  let socket = null;
+  let currentActivity = null;
+  let updateObservers = [];
+
   function getCurrentActivity() {
     return new Promise((resolve, reject) => {
       $.ajax({
@@ -58,11 +62,40 @@ let Mendieta = (function () {
     });
   }
 
+  function start() {
+    let url = "ws://" + location.host + "/updates";
+    socket = new WebSocket(url);
+
+    socket.onerror = function (err) {
+      console.error(err);
+    }
+    socket.onopen = function () {
+      console.log("OPEN!");
+    }
+    socket.onmessage = function (msg) {
+      currentActivity = JSON.parse(msg.data);
+      for (let i = 0; i < updateObservers.length; i++) {
+        let fn = updateObservers[i];
+        try {
+          fn(currentActivity);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+  }
+
+  function onUpdate(fn) {
+    updateObservers.push(fn);
+  }
+
   return {
     getAllActivities: getAllActivities,
     getCurrentActivity: getCurrentActivity,
     setCurrentActivity: setCurrentActivity,
     selectExistingActivity: selectExistingActivity,
     cancelActivity: cancelActivity,
+    start: start,
+    onUpdate: onUpdate,
   }
 })();

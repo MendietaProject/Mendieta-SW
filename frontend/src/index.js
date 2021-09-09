@@ -3,6 +3,7 @@
 $(document).ready(function () {
   initActivityMaker();
   initActivityChooser();
+  Mendieta.start();
 });
 
 function initActivityMaker() {
@@ -84,6 +85,11 @@ function initMainScreen(currentActivity) {
           table.ajax.reload();
         });
     }
+  });
+
+  Mendieta.onUpdate((currentActivity) => {
+    // TODO(Richo): Use currentActivity to reload the table data without going to the server again
+    table.ajax.reload();
   });
 }
 
