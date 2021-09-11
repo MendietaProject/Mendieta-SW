@@ -16,7 +16,7 @@ let Mendieta = (function () {
     });
   }
 
-  function setCurrentActivity(activity) {
+  function createActivity(activity) {
     return new Promise((resolve, reject) => {
       $.ajax({
         url: "/activities/current",
@@ -28,7 +28,7 @@ let Mendieta = (function () {
     });
   }
 
-  function selectExistingActivity(id) {
+  function selectActivity(id) {
     return new Promise((res, rej) => {
       $.ajax({
         url: "/activities/current",
@@ -92,8 +92,8 @@ let Mendieta = (function () {
   return {
     getAllActivities: getAllActivities,
     getCurrentActivity: getCurrentActivity,
-    setCurrentActivity: setCurrentActivity,
-    selectExistingActivity: selectExistingActivity,
+    createActivity: createActivity,
+    selectActivity: selectActivity,
     cancelSubmission: cancelSubmission,
     start: start,
     onUpdate: onUpdate,

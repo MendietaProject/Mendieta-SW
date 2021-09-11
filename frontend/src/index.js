@@ -15,7 +15,7 @@ function initActivityMaker() {
       name: $("#activity-name").val()
     };
 
-    Mendieta.setCurrentActivity(activity).then(result => {
+    Mendieta.createActivity(activity).then(result => {
       initMainScreen(result);
       $("#activity-selector").hide();
     })
@@ -36,7 +36,7 @@ function initActivityChooser(){
       $('#activities-list').append(button);
       button.text(result[i].name);
       button.on('click', () => {
-        Mendieta.selectExistingActivity(result[i].id)
+        Mendieta.selectActivity(result[i].id)
           .then(result => {
             initMainScreen(result);
             $("#activity-selector").hide();
