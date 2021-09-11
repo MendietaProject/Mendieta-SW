@@ -45,10 +45,12 @@ class Submission {
   }
 
   cancel() {
+    if (this.isCompleted()) return;
     this.state = SubmissionState.CANCELED;
     this.#finalizationResolve(false);
   }
   complete() {
+    if (this.isCompleted()) return;
     this.state = SubmissionState.COMPLETED;
     this.#finalizationResolve(true);
   }
