@@ -1,14 +1,11 @@
+const { Activity } = require("../models.js");
 const { v4: uuid } = require('uuid');
 
 class ActivityController {
   static init(app, state) {
 
     app.route("/activities")
-      .get((req, res) => {
-        // TODO(Richo): Devolver todas las actividades para que el docente elija
-        //TODO(Nico): No se como devolver las actividades
-        res.send(state.activities);
-      });
+      .get((req, res) => res.send(state.activities));
 
     app.route("/activities/current")
       .get((req, res) => {
@@ -39,12 +36,7 @@ class ActivityController {
           }
         } else {
           if(req.body.name){
-            let activity = {
-              name: req.body.name,
-              id: uuid(),
-              students: [],
-              submissions: []
-            };
+            let activity = new Activity(req.body.name);
             state.currentActivity = activity;
             state.activities.push(activity);
             res.send(state.currentActivity);

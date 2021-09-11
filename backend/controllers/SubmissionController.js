@@ -1,3 +1,4 @@
+const { Submission } = require("../models.js");
 const JSONX = require("../utils/jsonx.js");
 const { v4: uuid } = require('uuid');
 
@@ -12,24 +13,6 @@ function handleError(fn) {
   }
 }
 
-function createSubmission({author, program}) {
-  // TODO(Richo): Make a Submission class that initializes and validates the data
-  let submission = {
-    id: uuid(),
-    state: "PENDING", // TODO(Richo): Make enum?
-    author: author,
-    program: JSONX.parse(program),
-  };
-  // TODO(Richo): With a class this would be much simpler...
-  submission.finalizationToken = new Promise(res => {
-    submission.cancel = (canceled) => {
-      submission.state = "CANCELED";
-      res(canceled);
-    };
-  });
-  return submission;
-}
-
 class SubmissionController {
   static init(app, server) {
     // TODO(Richo): What happens if the current activity is not set yet?
@@ -38,9 +21,9 @@ class SubmissionController {
       .get(handleError((_, res) => {
         res.send(server.currentActivity.submissions);
       }))
-      .post(handleError(({body}, res) => {
-        let submission = createSubmission(body);
-        server.currentActivity.submissions.push(submission);
+      .post(handleError(({body: {author, program}}, res) => {
+        let submission = new Submission(author, JSONX.parse(program));
+        server.currentActivity.addSubmission(submission);
         server.currentQueue.put(submission);
         server.updateClients();
         res.send(submission);
@@ -48,9 +31,7 @@ class SubmissionController {
 
     app.route('/submissions/:id')
       .get(handleError(({params: {id}}, res) => {
-        // TODO(Richo): Find submission method in activity?
-        let submissions = server.currentActivity.submissions;
-        let submission = submissions.find(s => s.id == id);
+        let submission = server.currentActivity.findSubmission(id);
         if (submission) {
           res.send(submission);
         } else {
@@ -58,11 +39,9 @@ class SubmissionController {
         }
       }))
       .delete(handleError(({params: {id}}, res) => {
-        // TODO(Richo): Find submission method in activity?
-        let submissions = server.currentActivity.submissions;
-        let submission = submissions.find(s => s.id == id);
+        let submission = server.currentActivity.findSubmission(id);
         if (submission) {
-          submission.cancel(true);
+          submission.cancel();
           server.updateClients();
           res.send(submission);
         } else {

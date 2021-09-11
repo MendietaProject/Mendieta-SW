@@ -50,10 +50,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("../frontend/src"));
 app.use(express.static("../physicalbits/gui"));
 
+// TODO(Richo): A class for each controller seems silly, maybe just group them in a services.js file?
 SubmissionController.init(app, serverState);
 ActivityController.init(app, serverState);
+
 QueueManager.start(serverState);
 
 app.listen(port);
 
-console.log(`RESTful API server started on: http://localhost:${port}`);
+console.log(`Server started on: http://localhost:${port}`);
