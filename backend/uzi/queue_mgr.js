@@ -11,8 +11,8 @@ class QueueManager {
       await uzi.run(empty_program);
       while (true) { // TODO(Richo): While still connected?
         let submission = await server.currentQueue.take();
-        if (submission.state == "PENDING") {
-          submission.state = "ACTIVE";
+        if (submission.isPending()) {
+          submission.setActive();
           // TODO(Richo): Notify authors, then wait for confirmation before sending the program to the arduino
           await uzi.run(submission.program);
           server.updateClients();

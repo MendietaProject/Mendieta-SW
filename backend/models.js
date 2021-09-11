@@ -22,6 +22,7 @@ class Activity {
 
 const SubmissionState = {
   PENDING: "PENDING",
+  ACTIVE: "ACTIVE",
   CANCELED: "CANCELED",
   COMPLETED: "COMPLETED",
 };
@@ -44,6 +45,10 @@ class Submission {
     })
   }
 
+  setActive() {
+    if (!this.isPending()) return;
+    this.state = SubmissionState.ACTIVE;
+  }
   cancel() {
     if (this.isCompleted()) return;
     this.state = SubmissionState.CANCELED;
@@ -55,6 +60,9 @@ class Submission {
     this.#finalizationResolve(true);
   }
 
+  isPending() {
+    return this.state == SubmissionState.PENDING;
+  }
   isCanceled() {
     return this.state == SubmissionState.CANCELED;
   }
