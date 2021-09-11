@@ -19,9 +19,9 @@ function start (mendieta) {
   initActivityController(app, mendieta);
   initSubmissionController(app, mendieta);
 
-  app.listen(port);
-
-  console.log(`Server started on: http://localhost:${port}`);
+  app.listen(port, () => {
+    console.log(`Server started on http://localhost:${port}`);
+  });
 }
 
 function handleError(fn) {
