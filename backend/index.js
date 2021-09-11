@@ -1,4 +1,4 @@
-const { Mendieta } = require("./models.js");
+const { Mendieta } = require("./core.js");
 const services = require("./services.js");
 const QueueManager = require("./uzi/queue_mgr.js");
 

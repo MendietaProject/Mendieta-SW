@@ -1,23 +1,23 @@
 {
-  "name": "mendietaapi",
+  "name": "mendieta",
   "version": "1.0.0",
-  "description": "RESTful API for the Mendieta project",
+  "description": "Mendieta server",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npm install && nodemon --inspect server.js",
-    "start": "npm install && node server.js"
+    "dev": "npm install && nodemon --inspect index.js",
+    "start": "npm install && node index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IanBuceta/MendietaAPI.git"
+    "url": "git+https://github.com/MendietaProject/Mendieta-SW.git"
   },
-  "author": "Buceta Sbrizza Ian Manuel",
+  "author": "GIRA",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/IanBuceta/MendietaAPI/issues"
+    "url": "https://github.com/MendietaProject/Mendieta-SW/issues"
   },
-  "homepage": "https://github.com/IanBuceta/MendietaAPI#readme",
+  "homepage": "https://github.com/MendietaProject/Mendieta-SW",
   "dependencies": {
     "express": "^4.17.1",
     "express-ws": "^5.0.2",

@@ -1,4 +1,4 @@
-const { Activity, Submission } = require("./models.js");
+const { Activity, Submission } = require("./core.js");
 const JSONX = require("./utils/jsonx.js");
 
 function start (mendieta) {
