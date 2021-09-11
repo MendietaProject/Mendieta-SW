@@ -79,7 +79,7 @@ function initMainScreen(currentActivity) {
     var action = this.dataset.action;
     var data = table.row($(this).parents('tr')).data();
     if (action == "delete") {
-      Mendieta.cancelActivity(data.id)
+      Mendieta.cancelSubmission(data.id)
         .then(result => {
           console.log("Succesfully canceled " + result);
           table.ajax.reload();

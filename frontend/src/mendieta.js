@@ -40,7 +40,7 @@ let Mendieta = (function () {
     });
   }
 
-  function cancelActivity(id) {
+  function cancelSubmission(id) {
     return new Promise((res, rej) => {
       $.ajax({
         url: "/submissions/" + id,
@@ -94,7 +94,7 @@ let Mendieta = (function () {
     getCurrentActivity: getCurrentActivity,
     setCurrentActivity: setCurrentActivity,
     selectExistingActivity: selectExistingActivity,
-    cancelActivity: cancelActivity,
+    cancelSubmission: cancelSubmission,
     start: start,
     onUpdate: onUpdate,
   }
