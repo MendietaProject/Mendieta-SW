@@ -2,9 +2,7 @@ const UpdateStreamController = require('./controllers/UpdateStreamController');
 const SubmissionController = require('./controllers/SubmissionController');
 const ActivityController = require("./controllers/ActivityController");
 const { Mendieta } = require("./models.js");
-const Queue = require("./utils/queue.js");
 const QueueManager = require("./uzi/queue_mgr.js");
-
 
 const express = require('express'),
     ws = require("express-ws"),

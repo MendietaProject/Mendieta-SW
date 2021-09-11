@@ -1,5 +1,4 @@
 const { Activity } = require("../models.js");
-const { v4: uuid } = require('uuid');
 
 class ActivityController {
   static init(app, mendieta) {
