@@ -1,45 +1,39 @@
 const SubmissionController = require('./controllers/SubmissionController');
 const ActivityController = require("./controllers/ActivityController");
+const { Mendieta } = require("./models.js");
 const Queue = require("./utils/queue.js");
 const QueueManager = require("./uzi/queue_mgr.js");
 const ws = require("express-ws");
 
-// TODO(Richo): Make into a class
-const serverState = {
-  currentQueue: new Queue(),
-
-  activities: [],
-  currentActivity: null,
-  clients: [],
-
-  updateClients: function () {
-    console.log("Se actualizó el servidor! " + serverState.clients.length.toString());
-
-    // TODO(Richo): Qué info le tenemos que mandar a los clientes??
-    let jsonState = JSON.stringify(serverState.currentActivity);
-    for (let i = 0; i < serverState.clients.length; i++) {
-      let ws = serverState.clients[i];
-      try {
-        ws.send(jsonState);
-      } catch (err){
-        console.error(err);
-      }
-    }
-  }
-};
+const mendieta = new Mendieta();
 
 const express = require('express'),
     app = express(),
     port = process.env.PORT || 3000;
 
+// TODO(Richo): This seems like it should be inside a controller or something...
 ws(app);
-
+let clients = [];
 app.ws('/updates', function(ws, req) {
   console.log("Se conectó un cliente!");
-  serverState.clients.push(ws);
+  clients.push(ws);
   ws.onclose = () => {
     console.log("Se desconectó un cliente!");
-    serverState.clients = serverState.clients.filter(e => e != ws);
+    clients = clients.filter(e => e != ws);
+  }
+});
+mendieta.onUpdate(() => {
+  console.log("Se actualizó el servidor! " + clients.length.toString());
+
+  // TODO(Richo): Qué info le tenemos que mandar a los clientes??
+  let jsonState = JSON.stringify(mendieta.currentActivity);
+  for (let i = 0; i < clients.length; i++) {
+    let ws = clients[i];
+    try {
+      ws.send(jsonState);
+    } catch (err){
+      console.error(err);
+    }
   }
 });
 
@@ -51,10 +45,10 @@ app.use(express.static("../frontend/src"));
 app.use(express.static("../physicalbits/gui"));
 
 // TODO(Richo): A class for each controller seems silly, maybe just group them in a services.js file?
-SubmissionController.init(app, serverState);
-ActivityController.init(app, serverState);
+SubmissionController.init(app, mendieta);
+ActivityController.init(app, mendieta);
 
-QueueManager.start(serverState);
+QueueManager.start(mendieta);
 
 app.listen(port);
 

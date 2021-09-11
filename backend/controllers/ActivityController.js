@@ -2,45 +2,45 @@ const { Activity } = require("../models.js");
 const { v4: uuid } = require('uuid');
 
 class ActivityController {
-  static init(app, state) {
+  static init(app, mendieta) {
 
     app.route("/activities")
-      .get((req, res) => res.send(state.activities));
+      .get((req, res) => res.send(mendieta.activities));
 
     app.route("/activities/current")
       .get((req, res) => {
-        if (state.currentActivity) {
-          res.send(state.currentActivity);
+        if (mendieta.currentActivity) {
+          res.send(mendieta.currentActivity);
         } else {
           res.sendStatus(404);
         }
       })
       .delete((req, res) => {
-        let activity = state.currentActivity;
+        let activity = mendieta.currentActivity;
         if (!activity){
           res.sendStatus(400);
         } else {
-          state.currentActivity = null;
+          mendieta.currentActivity = null;
           res.sendStatus(200);
         }
       })
       .post((req, res) => {
         if(req.body.id) {
-          var activity = state.activities.find(activity => activity.id == req.body.id);
+          var activity = mendieta.findActivity(req.body.id);
           if(activity) {
-            state.currentActivity = activity;
+            mendieta.currentActivity = activity;
+            mendieta.update();
             res.send(activity);
-            state.updateClients();
           } else {
             res.sendStatus(404);
           }
         } else {
           if(req.body.name){
             let activity = new Activity(req.body.name);
-            state.currentActivity = activity;
-            state.activities.push(activity);
-            res.send(state.currentActivity);
-            state.updateClients();
+            mendieta.currentActivity = activity;
+            mendieta.activities.push(activity);
+            mendieta.update();
+            res.send(mendieta.currentActivity);
           }else{
             res.sendStatus(400);
           }

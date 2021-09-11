@@ -5,17 +5,17 @@ function timeout(ms) { return new Promise(res => setTimeout(res, ms)); }
 let empty_program = {compiled: {"__class__": "UziProgram", "globals": [], "scripts": []}};
 
 class QueueManager {
-  static async start(server) {
+  static async start(mendieta) {
     try {
       await uzi.connect("COM4"); // TODO(Richo): Make it configurable...
       await uzi.run(empty_program);
       while (true) { // TODO(Richo): While still connected?
-        let submission = await server.currentQueue.take();
+        let submission = await mendieta.currentQueue.take();
         if (submission.isPending()) {
           submission.setActive();
           // TODO(Richo): Notify authors, then wait for confirmation before sending the program to the arduino
           await uzi.run(submission.program);
-          server.updateClients();
+          mendieta.update();
           // TODO(Richo): The timeout should be configurable by activity
           await Promise.race([timeout(20000), submission.finalizationPromise]);
           if (submission.isCanceled()) {
@@ -36,7 +36,7 @@ class QueueManager {
             submission.complete();
             console.log(`Submission ${submission.id} COMPLETED succesfully!`);
           }
-          server.updateClients();
+          mendieta.update();
           await uzi.run(empty_program);
         }
       }

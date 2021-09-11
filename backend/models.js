@@ -1,6 +1,29 @@
 const { v4: uuid } = require('uuid');
+const Queue = require("./utils/queue.js");
 
-// TODO(Richo): Make a class Mendieta that handles the state of the server?
+class Mendieta {
+  currentQueue = new Queue();
+  activities = [];
+  currentActivity = null;
+  #observers = [];
+
+  onUpdate(fn) {
+    this.#observers.push(fn);
+  }
+  update() {
+    this.#observers.forEach(fn => {
+      try {
+        fn(); // TODO(Richo): What should we send as argument?
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  findActivity(id) {
+    return this.activities.find(activity => activity.id == id);
+  }
+}
 
 class Activity {
   id = uuid();
@@ -72,6 +95,7 @@ class Submission {
 }
 
 module.exports = {
+  Mendieta: Mendieta,
   Activity: Activity,
   Submission: Submission,
   SubmissionState: SubmissionState,

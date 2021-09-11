@@ -1,6 +1,5 @@
 const { Submission } = require("../models.js");
 const JSONX = require("../utils/jsonx.js");
-const { v4: uuid } = require('uuid');
 
 function handleError(fn) {
   return (req, res) => {
@@ -14,24 +13,24 @@ function handleError(fn) {
 }
 
 class SubmissionController {
-  static init(app, server) {
+  static init(app, mendieta) {
     // TODO(Richo): What happens if the current activity is not set yet?
 
     app.route('/submissions')
       .get(handleError((_, res) => {
-        res.send(server.currentActivity.submissions);
+        res.send(mendieta.currentActivity.submissions);
       }))
       .post(handleError(({body: {author, program}}, res) => {
         let submission = new Submission(author, JSONX.parse(program));
-        server.currentActivity.addSubmission(submission);
-        server.currentQueue.put(submission);
-        server.updateClients();
+        mendieta.currentActivity.addSubmission(submission);
+        mendieta.currentQueue.put(submission);
+        mendieta.update();
         res.send(submission);
       }));
 
     app.route('/submissions/:id')
       .get(handleError(({params: {id}}, res) => {
-        let submission = server.currentActivity.findSubmission(id);
+        let submission = mendieta.currentActivity.findSubmission(id);
         if (submission) {
           res.send(submission);
         } else {
@@ -39,10 +38,10 @@ class SubmissionController {
         }
       }))
       .delete(handleError(({params: {id}}, res) => {
-        let submission = server.currentActivity.findSubmission(id);
+        let submission = mendieta.currentActivity.findSubmission(id);
         if (submission) {
           submission.cancel();
-          server.updateClients();
+          mendieta.update();
           res.send(submission);
         } else {
           res.sendStatus(404);
