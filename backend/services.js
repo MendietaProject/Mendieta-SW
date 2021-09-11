@@ -30,7 +30,8 @@ function handleError(fn) {
       fn(req, res);
     } catch (err) {
       res.status(err.statusCode || 500);
-      res.send(JSON.stringify(`${err.name}: ${err.message}`));
+      res.send(err);
+      console.error(err);
     }
   }
 }
@@ -38,7 +39,7 @@ function handleError(fn) {
 function initUpdateStreamController(app, mendieta) {
   let clients = [];
 
-  app.ws('/updates', function(ws, req) {
+  app.ws('/updates', (ws, req) => {
     console.log("Se conectó un cliente!");
     clients.push(ws);
     ws.onclose = () => {
@@ -66,25 +67,25 @@ function initUpdateStreamController(app, mendieta) {
 function initActivityController(app, mendieta) {
 
   app.route("/activities")
-    .get((req, res) => res.send(mendieta.activities));
+    .get(handleError((req, res) => res.send(mendieta.activities)));
 
   app.route("/activities/current")
-    .get((req, res) => {
+    .get(handleError((req, res) => {
       if (mendieta.currentActivity) {
         res.send(mendieta.currentActivity);
       } else {
         res.sendStatus(404);
       }
-    })
-    .delete((req, res) => {
+    }))
+    .delete(handleError((req, res) => {
       if (!mendieta.currentActivity){
         res.sendStatus(400);
       } else {
         mendieta.currentActivity = null;
         res.sendStatus(200);
       }
-    })
-    .post((req, res) => {
+    }))
+    .post(handleError((req, res) => {
       if(req.body.id) {
         var activity = mendieta.findActivity(req.body.id);
         if(activity) {
@@ -101,7 +102,7 @@ function initActivityController(app, mendieta) {
           res.sendStatus(400);
         }
       }
-    });
+    }));
 }
 
 function initSubmissionController(app, mendieta) {
