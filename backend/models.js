@@ -2,10 +2,61 @@ const { v4: uuid } = require('uuid');
 const Queue = require("./utils/queue.js");
 
 class Mendieta {
-  currentQueue = new Queue();
+  #currentQueue = new Queue();
   activities = [];
-  currentActivity = null;
+  #currentActivity = null;
   #observers = [];
+
+  get currentActivity() {
+    return this.#currentActivity;
+  }
+  set currentActivity(activity) {
+    // TODO(Richo): When changing activity we must reset the current queue!
+    this.#currentActivity = activity;
+    if (activity && !this.findActivity(activity.id)) {
+      this.addActivity(activity);
+    }
+    this.update();
+  }
+
+  get submissions() {
+    if (!this.#currentActivity) return [];
+    return this.#currentActivity.submissions;
+  }
+
+  findActivity(id) {
+    return this.activities.find(activity => activity.id == id);
+  }
+  addActivity(activity) {
+    this.activities.push(activity);
+  }
+
+  findSubmission(id) {
+    // TODO(Richo): Throw if no current activity is set yet!
+    return this.#currentActivity.findSubmission(id);
+  }
+  addSubmission(submission) {
+    // TODO(Richo): Throw if no current activity is set yet!
+    this.#currentActivity.addSubmission(submission);
+    this.#currentQueue.put(submission);
+    this.update();
+  }
+  activateSubmission(submission) {
+    submission.setActive();
+    this.update();
+  }
+  completeSubmission(submission) {
+    submission.complete();
+    this.update();
+  }
+  cancelSubmission(submission) {
+    submission.cancel();
+    this.update();
+  }
+
+  nextSubmission() {
+    return this.#currentQueue.take();
+  }
 
   onUpdate(fn) {
     this.#observers.push(fn);
@@ -18,10 +69,6 @@ class Mendieta {
         console.error(err);
       }
     });
-  }
-
-  findActivity(id) {
-    return this.activities.find(activity => activity.id == id);
   }
 }
 

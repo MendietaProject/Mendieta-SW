@@ -16,8 +16,7 @@ class ActivityController {
         }
       })
       .delete((req, res) => {
-        let activity = mendieta.currentActivity;
-        if (!activity){
+        if (!mendieta.currentActivity){
           res.sendStatus(400);
         } else {
           mendieta.currentActivity = null;
@@ -29,17 +28,13 @@ class ActivityController {
           var activity = mendieta.findActivity(req.body.id);
           if(activity) {
             mendieta.currentActivity = activity;
-            mendieta.update();
             res.send(activity);
           } else {
             res.sendStatus(404);
           }
         } else {
           if(req.body.name){
-            let activity = new Activity(req.body.name);
-            mendieta.currentActivity = activity;
-            mendieta.activities.push(activity);
-            mendieta.update();
+            mendieta.currentActivity = new Activity(req.body.name);
             res.send(mendieta.currentActivity);
           }else{
             res.sendStatus(400);

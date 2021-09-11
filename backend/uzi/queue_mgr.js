@@ -10,12 +10,13 @@ class QueueManager {
       await uzi.connect("COM4"); // TODO(Richo): Make it configurable...
       await uzi.run(empty_program);
       while (true) { // TODO(Richo): While still connected?
-        let submission = await mendieta.currentQueue.take();
+        let submission = await mendieta.nextSubmission();
         if (submission.isPending()) {
-          submission.setActive();
+          mendieta.activateSubmission(submission);
+
           // TODO(Richo): Notify authors, then wait for confirmation before sending the program to the arduino
           await uzi.run(submission.program);
-          mendieta.update();
+
           // TODO(Richo): The timeout should be configurable by activity
           await Promise.race([timeout(20000), submission.finalizationPromise]);
           if (submission.isCanceled()) {
@@ -33,10 +34,9 @@ class QueueManager {
             console.log(`Submission ${submission.id} was COMPLETED manually by the user!`);
           } else {
             // NOTE(Richo): If the submission state didn't change it means we got here on timeout
-            submission.complete();
+            mendieta.completeSubmission(submission);
             console.log(`Submission ${submission.id} COMPLETED succesfully!`);
           }
-          mendieta.update();
           await uzi.run(empty_program);
         }
       }
