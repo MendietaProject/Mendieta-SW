@@ -7,10 +7,11 @@ $(document).ready(function () {
 });
 
 function initActivityMaker() {
-  // TODO(Richo): Disable form after submission (re-enable on complete)
+  // TODO(Richo): Disable form after submission (re-enable on complete) to prevent multiple submissions
   $("#create-activity-form").on("submit", function (e) {
     e.preventDefault();
 
+    // TODO(Richo): Load all the other fields as well!
     let activity = {
       name: $("#activity-name").val()
     };
@@ -46,7 +47,6 @@ function initActivityChooser(){
   });
 }
 
-// TODO(Richo): Pensar mejor nombre!
 function initMainScreen(currentActivity) {
   $("#main-screen").show();
   const table = $('#table_id').DataTable({
@@ -79,6 +79,7 @@ function initMainScreen(currentActivity) {
     var action = this.dataset.action;
     var data = table.row($(this).parents('tr')).data();
     if (action == "delete") {
+      // TODO(Richo): Add some kind of dialog to confirm user action
       Mendieta.cancelSubmission(data.id)
         .then(result => {
           console.log("Succesfully canceled " + result);
