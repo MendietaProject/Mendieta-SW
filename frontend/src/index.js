@@ -94,7 +94,6 @@ function initMainScreen(currentActivity) {
 }
 
 function backToMenu(){
-  $("#activity-selector").show();
-  $("#main-screen").hide();
-  $("#table_id").dataTable().fnDestroy();
+  // TODO(Richo): Add some kind of dialog to confirm user action
+  Mendieta.cancelCurrentActivity().then(() => location.reload());
 }

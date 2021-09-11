@@ -40,6 +40,17 @@ let Mendieta = (function () {
     });
   }
 
+  function cancelCurrentActivity() {
+    return new Promise((res, rej) => {
+      $.ajax({
+        url: "/activities/current",
+        type: "DELETE",
+        success: res,
+        error: rej
+      });
+    });
+  }
+
   function cancelSubmission(id) {
     return new Promise((res, rej) => {
       $.ajax({
@@ -94,6 +105,7 @@ let Mendieta = (function () {
     getCurrentActivity: getCurrentActivity,
     createActivity: createActivity,
     selectActivity: selectActivity,
+    cancelCurrentActivity: cancelCurrentActivity,
     cancelSubmission: cancelSubmission,
     start: start,
     onUpdate: onUpdate,
