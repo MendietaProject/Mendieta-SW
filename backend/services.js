@@ -135,6 +135,28 @@ function initSubmissionController(app, mendieta) {
         res.sendStatus(404);
       }
     }));
+
+  // TODO(Richo): The following routes don't adhere to the REST rules (I think)
+  app.route('/submissions/:id/start')
+    .post(handleError(({params: {id}}, res) => {
+      let submission = mendieta.findSubmission(id);
+      mendieta.startSubmission(submission);
+      res.send(submission);
+    }));
+
+  app.route('/submissions/:id/pause')
+    .post(handleError(({params: {id}}, res) => {
+      let submission = mendieta.findSubmission(id);
+      mendieta.pauseSubmission(submission);
+      res.send(submission);
+    }));
+
+  app.route('/submissions/:id/stop')
+    .post(handleError(({params: {id}}, res) => {
+      let submission = mendieta.findSubmission(id);
+      mendieta.stopSubmission(submission);
+      res.send(submission);
+    }));
 }
 
 module.exports = {start: start};

@@ -42,7 +42,19 @@ class Mendieta {
     this.update();
   }
   activateSubmission(submission) {
-    submission.setActive();
+    submission.activate();
+    this.update();
+  }
+  pauseSubmission(submission) {
+    submission.pause();
+    this.update();
+  }
+  startSubmission(submission) {
+    submission.start();
+    this.update();
+  }
+  stopSubmission(submission) {
+    submission.stop();
     this.update();
   }
   completeSubmission(submission) {
@@ -93,6 +105,8 @@ class Activity {
 const SubmissionState = {
   PENDING: "PENDING",
   ACTIVE: "ACTIVE",
+  RUNNING: "RUNNING",
+  PAUSED: "PAUSED",
   CANCELED: "CANCELED",
   COMPLETED: "COMPLETED",
 };
@@ -126,16 +140,31 @@ class Submission {
     resolver(state);
   }
 
-  setActive() {
+  activate() {
     if (!this.isPending()) return;
     this.#changeState(SubmissionState.ACTIVE);
+  }
+  start() {
+    if (!this.isActive() && !this.isPaused()) return;
+    this.#changeState(SubmissionState.RUNNING);
+  }
+  pause() {
+    if (!this.isRunning()) return;
+    this.#changeState(SubmissionState.PAUSED);
+  }
+  stop() {
+    if (this.isActive()) {
+      this.cancel();
+    } else {
+      this.complete();
+    }
   }
   cancel() {
     if (this.isCompleted() || this.isCanceled()) return;
     this.#changeState(SubmissionState.CANCELED);
   }
   complete() {
-    if (this.isCompleted()) return;
+    if (!this.isActive() && !this.isRunning() && !this.isPaused()) return;
     this.#changeState(SubmissionState.COMPLETED);
   }
 
@@ -144,6 +173,12 @@ class Submission {
   }
   isActive() {
     return this.state == SubmissionState.ACTIVE;
+  }
+  isRunning() {
+    return this.state == SubmissionState.RUNNING;
+  }
+  isPaused() {
+    return this.state == SubmissionState.PAUSED;
   }
   isCanceled() {
     return this.state == SubmissionState.CANCELED;
