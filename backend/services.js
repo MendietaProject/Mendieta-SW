@@ -1,13 +1,12 @@
+const express = require('express');
+const ws = require("express-ws");
 const { Activity, Submission } = require("./core.js");
 const JSONX = require("./utils/jsonx.js");
 
 function start (mendieta) {
-  const express = require('express');
-  const ws = require("express-ws");
   const app = express();
-  const port = process.env.PORT || 3000;
-
   ws(app);
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -19,6 +18,7 @@ function start (mendieta) {
   initActivityController(app, mendieta);
   initSubmissionController(app, mendieta);
 
+  const port = process.env.PORT || 3000;
   app.listen(port, () => {
     console.log(`Server started on http://localhost:${port}`);
   });
