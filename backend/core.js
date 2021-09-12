@@ -162,6 +162,7 @@ class Submission {
     return true;
   }
   stop() {
+    // NOTE(Richo): Stopping before the program even run once means cancellation, otherwise completion.
     return this.isActive() ? this.cancel() : this.complete();
   }
   cancel() {
