@@ -42,28 +42,34 @@ class Mendieta {
     this.update();
   }
   activateSubmission(submission) {
-    submission.activate();
-    this.update();
+    if (submission.activate()) {
+      this.update();
+    }
   }
   pauseSubmission(submission) {
-    submission.pause();
-    this.update();
+    if (submission.pause()) {
+      this.update();
+    }
   }
   startSubmission(submission) {
-    submission.start();
-    this.update();
+    if (submission.start()) {
+      this.update();
+    }
   }
   stopSubmission(submission) {
-    submission.stop();
-    this.update();
+    if (submission.stop()) {
+      this.update();
+    }
   }
   completeSubmission(submission) {
-    submission.complete();
-    this.update();
+    if (submission.complete()) {
+      this.update();
+    }
   }
   cancelSubmission(submission) {
-    submission.cancel();
-    this.update();
+    if (submission.cancel()) {
+      this.update();
+    }
   }
 
   nextSubmission() {
@@ -141,31 +147,32 @@ class Submission {
   }
 
   activate() {
-    if (!this.isPending()) return;
+    if (!this.isPending()) return false;
     this.#changeState(SubmissionState.ACTIVE);
+    return true;
   }
   start() {
-    if (!this.isActive() && !this.isPaused()) return;
+    if (!this.isActive() && !this.isPaused()) return false;
     this.#changeState(SubmissionState.RUNNING);
+    return true;
   }
   pause() {
-    if (!this.isRunning()) return;
+    if (!this.isRunning()) return false;
     this.#changeState(SubmissionState.PAUSED);
+    return true;
   }
   stop() {
-    if (this.isActive()) {
-      this.cancel();
-    } else {
-      this.complete();
-    }
+    return this.isActive() ? this.cancel() : this.complete();
   }
   cancel() {
-    if (this.isCompleted() || this.isCanceled()) return;
+    if (this.isCompleted() || this.isCanceled()) return false;
     this.#changeState(SubmissionState.CANCELED);
+    return true;
   }
   complete() {
-    if (!this.isActive() && !this.isRunning() && !this.isPaused()) return;
+    if (!this.isActive() && !this.isRunning() && !this.isPaused()) return false;
     this.#changeState(SubmissionState.COMPLETED);
+    return true;
   }
 
   isPending() {

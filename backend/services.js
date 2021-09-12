@@ -40,16 +40,16 @@ function initUpdateStreamController(app, mendieta) {
   let clients = [];
 
   app.ws('/updates', (ws, req) => {
-    console.log("Se conectó un cliente!");
     clients.push(ws);
+    console.log(`Se conectó un cliente! (# clientes: ${clients.length})`);
     ws.onclose = () => {
-      console.log("Se desconectó un cliente!");
       clients = clients.filter(e => e != ws);
+      console.log(`Se desconectó un cliente! (# clientes: ${clients.length})`);
     }
   });
 
   mendieta.onUpdate(() => {
-    console.log("Se actualizó el servidor! " + clients.length.toString());
+    console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
 
     // TODO(Richo): Qué info le tenemos que mandar a los clientes??
     let jsonState = JSON.stringify(mendieta.currentActivity);
