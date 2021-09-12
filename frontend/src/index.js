@@ -3,7 +3,7 @@
 $(document).ready(function () {
   initActivityMaker();
   initActivityChooser();
-  Mendieta.start();
+  Mendieta.connectToServer();
 });
 
 function initActivityMaker() {

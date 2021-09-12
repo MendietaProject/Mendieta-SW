@@ -73,7 +73,7 @@ let Mendieta = (function () {
     });
   }
 
-  function start() {
+  function connectToServer() {
     let url = "ws://" + location.host + "/updates";
     socket = new WebSocket(url);
 
@@ -107,7 +107,7 @@ let Mendieta = (function () {
     selectActivity: selectActivity,
     cancelCurrentActivity: cancelCurrentActivity,
     cancelSubmission: cancelSubmission,
-    start: start,
+    connectToServer: connectToServer,
     onUpdate: onUpdate,
   }
 })();
