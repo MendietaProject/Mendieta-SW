@@ -103,35 +103,47 @@ class Submission {
   author;
   program;
 
-  finalizationPromise;
-  #finalizationResolve;
+  stateChanged;
+  #stateChangedResolver;
 
   constructor(author, program) {
     this.author = author;
     this.program = program;
 
-    this.finalizationPromise = new Promise(resolve => {
-      this.#finalizationResolve = resolve;
-    })
+    this.initStateChanged();
+  }
+
+  initStateChanged() {
+    this.stateChanged = new Promise(resolve => {
+      this.#stateChangedResolver = resolve;
+    });
+  }
+
+  #changeState(state) {
+    let resolver = this.#stateChangedResolver;
+    this.initStateChanged();
+    this.state = state;
+    resolver(state);
   }
 
   setActive() {
     if (!this.isPending()) return;
-    this.state = SubmissionState.ACTIVE;
+    this.#changeState(SubmissionState.ACTIVE);
   }
   cancel() {
-    if (this.isCompleted()) return;
-    this.state = SubmissionState.CANCELED;
-    this.#finalizationResolve(false);
+    if (this.isCompleted() || this.isCanceled()) return;
+    this.#changeState(SubmissionState.CANCELED);
   }
   complete() {
     if (this.isCompleted()) return;
-    this.state = SubmissionState.COMPLETED;
-    this.#finalizationResolve(true);
+    this.#changeState(SubmissionState.COMPLETED);
   }
 
   isPending() {
     return this.state == SubmissionState.PENDING;
+  }
+  isActive() {
+    return this.state == SubmissionState.ACTIVE;
   }
   isCanceled() {
     return this.state == SubmissionState.CANCELED;

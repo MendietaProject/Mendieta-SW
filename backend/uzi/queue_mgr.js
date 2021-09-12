@@ -18,7 +18,7 @@ class QueueManager {
           await uzi.run(submission.program);
 
           // TODO(Richo): The timeout should be configurable by activity
-          await Promise.race([timeout(20000), submission.finalizationPromise]);
+          await Promise.race([timeout(20000), submission.stateChanged]);
           if (submission.isCanceled()) {
             // NOTE(Richo): Either the admin or the user canceled the submission while it was active.
             // TODO(Richo): The user cancellation should be done before starting, that way we can distinguish
