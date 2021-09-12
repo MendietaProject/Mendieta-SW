@@ -132,8 +132,10 @@ function initSubmissionController(app, mendieta) {
   app.route('/submissions/:id')
     .get(handleError(withSubmission((submission, res) => {
       res.send(submission);
-    })))
-    .delete(handleError(withSubmission((submission, res) => {
+    })));
+
+  app.route('/submissions/:id/cancel')
+    .post(handleError(withSubmission((submission, res) => {
       mendieta.cancelSubmission(submission);
       res.send(submission);
     })));

@@ -54,8 +54,8 @@ let Mendieta = (function () {
   function cancelSubmission(id) {
     return new Promise((res, rej) => {
       $.ajax({
-        url: "/submissions/" + id,
-        type: "delete",
+        url: "/submissions/" + id + "/cancel",
+        type: "POST",
         success: res,
         error: rej
       });
