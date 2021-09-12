@@ -104,7 +104,7 @@ class Activity {
 
 const SubmissionState = {
   PENDING: "PENDING",
-  ACTIVE: "ACTIVE",
+  ACTIVE: "ACTIVE", // TODO(Richo): Think of a better name (WAITING_FOR_USER?)
   RUNNING: "RUNNING",
   PAUSED: "PAUSED",
   CANCELED: "CANCELED",
@@ -185,6 +185,9 @@ class Submission {
   }
   isCompleted() {
     return this.state == SubmissionState.COMPLETED;
+  }
+  isFinished() {
+    return this.isCompleted() || this.isCanceled();
   }
 }
 

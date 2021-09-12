@@ -25,16 +25,13 @@ async function processSubmission(submission, mendieta) {
 
   // TODO(Richo): Make the timeout configurable...
   let submissionTimeout = timeout(60000);
-  while (true) {
+  while (!submission.isFinished()) {
     let state = await Promise.race([submissionTimeout, submission.stateChanged]);
     if (!state) {
       // NOTE(Richo): TIMEOUT! If the submission state didn't change it means we got here on timeout
       mendieta.completeSubmission(submission);
       console.log(`${new Date().toISOString()} -> Submission ${submission.id} COMPLETED succesfully!`);
-      break;
-    }
-
-    if (submission.isRunning()) {
+    } else if (submission.isRunning()) {
       // TODO(Richo): User clicked start button (not implemented yet)
       await uzi.run(submission.program);
       console.log(`${new Date().toISOString()} -> Submission ${submission.id} is now RUNNING!`);
@@ -45,7 +42,6 @@ async function processSubmission(submission, mendieta) {
     } else if (submission.isCompleted()) {
       // TODO(Richo): The user stopped the program after it was started. This modal is not implemented yet.
       console.log(`${new Date().toISOString()} -> Submission ${submission.id} was COMPLETED manually by the user!`);
-      break;
     } else if (submission.isCanceled()) {
       // NOTE(Richo): Either the admin or the user canceled the submission while it was active.
       // TODO(Richo): The user cancellation should be done before starting, that way we can distinguish
@@ -56,7 +52,6 @@ async function processSubmission(submission, mendieta) {
       // program to the arduino but not change the submission state. Stopping should send the empty
       // program but also change the submission state to completed.
       console.log(`${new Date().toISOString()} -> Submission ${submission.id} was CANCELED!`);
-      break;
     }
   }
 
