@@ -117,46 +117,44 @@ function initSubmissionController(app, mendieta) {
       res.send(submission);
     }));
 
-  app.route('/submissions/:id')
-    .get(handleError(({params: {id}}, res) => {
-      let submission = mendieta.findSubmission(id);
-      if (submission) {
-        res.send(submission);
-      } else {
-        res.sendStatus(404);
-      }
-    }))
-    .delete(handleError(({params: {id}}, res) => {
-      let submission = mendieta.findSubmission(id);
-      if (submission) {
-        mendieta.cancelSubmission(submission);
-        res.send(submission);
-      } else {
-        res.sendStatus(404);
-      }
-    }));
 
-  // TODO(Richo): The following routes don't adhere to the REST rules (I think)
-  app.route('/submissions/:id/start')
-    .post(handleError(({params: {id}}, res) => {
+  let withSubmission = fn => {
+    return ({params: {id}}, res) => {
       let submission = mendieta.findSubmission(id);
+      if (submission) {
+        fn(submission, res);
+      } else {
+        res.sendStatus(404);
+      }
+    };
+  }
+
+  app.route('/submissions/:id')
+    .get(handleError(withSubmission((submission, res) => {
+      res.send(submission);
+    })))
+    .delete(handleError(withSubmission((submission, res) => {
+      mendieta.cancelSubmission(submission);
+      res.send(submission);
+    })));
+
+  app.route('/submissions/:id/start')
+    .post(handleError(withSubmission((submission, res) => {
       mendieta.startSubmission(submission);
       res.send(submission);
-    }));
+    })));
 
   app.route('/submissions/:id/pause')
-    .post(handleError(({params: {id}}, res) => {
-      let submission = mendieta.findSubmission(id);
+    .post(handleError(withSubmission((submission, res) => {
       mendieta.pauseSubmission(submission);
       res.send(submission);
-    }));
+    })));
 
   app.route('/submissions/:id/stop')
-    .post(handleError(({params: {id}}, res) => {
-      let submission = mendieta.findSubmission(id);
+    .post(handleError(withSubmission((submission, res) => {
       mendieta.stopSubmission(submission);
       res.send(submission);
-    }));
+    })));
 }
 
 module.exports = {start: start};
