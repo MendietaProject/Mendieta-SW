@@ -96,5 +96,5 @@ function initMainScreen(currentActivity) {
 
 function backToMenu(){
   // TODO(Richo): Add some kind of dialog to confirm user action
-  Mendieta.cancelCurrentActivity().then(() => location.reload());
+  Mendieta.cancelCurrentActivity().finally(() => location.reload());
 }
