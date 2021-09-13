@@ -17,6 +17,7 @@ function start (mendieta) {
   initUpdateStreamController(app, mendieta);
   initActivityController(app, mendieta);
   initSubmissionController(app, mendieta);
+  initStudentController(app, mendieta);
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
@@ -40,12 +41,17 @@ function initUpdateStreamController(app, mendieta) {
   let clients = [];
 
   app.ws('/updates', (ws, req) => {
-    clients.push(ws);
+    let client = {id: null, socket: ws};
+    clients.push(client);
     console.log(`Se conectó un cliente! (# clientes: ${clients.length})`);
+    ws.onmessage = (msg) => {
+      if (client.id) return;
+      client.id == msg.data;
+    };
     ws.onclose = () => {
-      clients = clients.filter(e => e != ws);
+      clients = clients.filter(c => c != client);
       console.log(`Se desconectó un cliente! (# clientes: ${clients.length})`);
-    }
+    };
   });
 
   mendieta.onUpdate(() => {
@@ -53,14 +59,14 @@ function initUpdateStreamController(app, mendieta) {
 
     // TODO(Richo): Qué info le tenemos que mandar a los clientes??
     let jsonState = JSON.stringify(mendieta.currentActivity);
-    for (let i = 0; i < clients.length; i++) {
-      let ws = clients[i];
+    clients.forEach(client => {
       try {
+        let ws = client.socket;
         ws.send(jsonState);
       } catch (err){
         console.error(err);
       }
-    }
+    });
   });
 }
 
@@ -157,6 +163,18 @@ function initSubmissionController(app, mendieta) {
       mendieta.stopSubmission(submission);
       res.send(submission);
     })));
+}
+
+function initStudentController(app, mendieta) {
+
+  app.route('/students')
+    .get(handleError((_, res) => {
+      res.send(mendieta.students);
+    }))
+    .post(handleError(({body: {id, name}}, res) => {
+      let student = mendieta.registerStudent(id, name);
+      res.send(student);
+    }));
 }
 
 module.exports = {start: start};

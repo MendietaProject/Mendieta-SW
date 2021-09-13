@@ -3,9 +3,12 @@ const Queue = require("./utils/queue.js");
 
 class Mendieta {
   #currentQueue = new Queue();
-  activities = [];
   #currentActivity = null;
   #observers = [];
+
+  // TODO(Richo): These should probably be handled by the storage
+  activities = [];
+  students = [];
 
   get currentActivity() {
     return this.#currentActivity;
@@ -29,6 +32,22 @@ class Mendieta {
   }
   addActivity(activity) {
     this.activities.push(activity);
+  }
+
+  findStudent(id) {
+    return this.students.find(student => student.id == id);
+  }
+  registerStudent(id, name) {
+    // NOTE(Richo): If an id is supplied look for the existing student and update
+    // its data in place, otherwise create a new register for this student.
+    let student = id ? this.findStudent(id) : null;
+    if (student) {
+      student.name = name;
+    } else {
+      student = { id: uuid(), name: name };
+      this.students.push(student);
+    }
+    return student;
   }
 
   findSubmission(id) {
@@ -93,7 +112,6 @@ class Mendieta {
 class Activity {
   id = uuid();
   name;
-  students = [];
   submissions = [];
 
   constructor(name) {

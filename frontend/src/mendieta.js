@@ -3,7 +3,7 @@ let Mendieta = (function () {
 
   let socket = null;
   let currentActivity = null;
-  let updateObservers = [];
+  let observers = [];
 
   function getCurrentActivity() {
     return new Promise((resolve, reject) => {
@@ -74,19 +74,17 @@ let Mendieta = (function () {
   }
 
   function connectToServer() {
+    // TODO(Richo): Handle server disconnect gracefully
     let url = "ws://" + location.host + "/updates";
     socket = new WebSocket(url);
 
     socket.onerror = function (err) {
       console.error(err);
     }
-    socket.onopen = function () {
-      console.log("OPEN!");
-    }
     socket.onmessage = function (msg) {
       currentActivity = JSON.parse(msg.data);
-      for (let i = 0; i < updateObservers.length; i++) {
-        let fn = updateObservers[i];
+      for (let i = 0; i < observers.length; i++) {
+        let fn = observers[i];
         try {
           fn(currentActivity);
         } catch (err) {
@@ -97,7 +95,7 @@ let Mendieta = (function () {
   }
 
   function onUpdate(fn) {
-    updateObservers.push(fn);
+    observers.push(fn);
   }
 
   return {
