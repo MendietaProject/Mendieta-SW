@@ -20,7 +20,6 @@ function initActivityMaker() {
       initMainScreen(result);
       $("#activity-selector").hide();
     })
-    document.getElementById("titulo-actividad").innerText = activity.name;
   });
 
   Mendieta.getCurrentActivity()
@@ -49,6 +48,7 @@ function initActivityChooser(){
 
 function initMainScreen(currentActivity) {
   $("#main-screen").show();
+  document.getElementById("titulo-actividad").innerText = currentActivity.name;
   const table = $('#table_id').DataTable({
     // TODO(Richo): Get the data directly from the websocket and update table manually?
     ajax: {
