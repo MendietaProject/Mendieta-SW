@@ -16,10 +16,7 @@ function initActivityMaker() {
       name: $("#activity-name").val()
     };
 
-    Mendieta.createActivity(activity).then(result => {
-      initMainScreen(result);
-      $("#activity-selector").hide();
-    })
+    Mendieta.createActivity(activity).then(initMainScreen)
   });
 
   Mendieta.getCurrentActivity()
@@ -29,24 +26,20 @@ function initActivityMaker() {
 
 function initActivityChooser(){
   Mendieta.getAllActivities().then(result => {
-    console.log(result);
     $('#activities-list').html('');
     for(let i=0; i < result.length; i++){
       var button = $('<button type="button" class="list-group-item list-group-item-action">A second item</button>');
       $('#activities-list').append(button);
       button.text(result[i].name);
       button.on('click', () => {
-        Mendieta.selectActivity(result[i].id)
-          .then(result => {
-            initMainScreen(result);
-            $("#activity-selector").hide();
-          });
-        });
+        Mendieta.selectActivity(result[i].id).then(initMainScreen);
+      });
     }
   });
 }
 
 function initMainScreen(currentActivity) {
+  $("#activity-selector").hide();
   $("#main-screen").show();
   document.getElementById("titulo-actividad").innerText = currentActivity.name;
   const table = $('#table_id').DataTable({
