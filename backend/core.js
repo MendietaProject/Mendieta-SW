@@ -128,7 +128,7 @@ class Activity {
 
 const SubmissionState = {
   PENDING: "PENDING",
-  ACTIVE: "ACTIVE", // TODO(Richo): Think of a better name (WAITING_FOR_USER?)
+  READY: "READY",
   RUNNING: "RUNNING",
   PAUSED: "PAUSED",
   CANCELED: "CANCELED",
@@ -166,11 +166,11 @@ class Submission {
 
   activate() {
     if (!this.isPending()) return false;
-    this.#changeState(SubmissionState.ACTIVE);
+    this.#changeState(SubmissionState.READY);
     return true;
   }
   start() {
-    if (!this.isActive() && !this.isPaused()) return false;
+    if (!this.isReady() && !this.isPaused()) return false;
     this.#changeState(SubmissionState.RUNNING);
     return true;
   }
@@ -181,7 +181,7 @@ class Submission {
   }
   stop() {
     // NOTE(Richo): Stopping before the program even run once means cancellation, otherwise completion.
-    return this.isActive() ? this.cancel() : this.complete();
+    return this.isReady() ? this.cancel() : this.complete();
   }
   cancel() {
     if (this.isCompleted() || this.isCanceled()) return false;
@@ -189,7 +189,7 @@ class Submission {
     return true;
   }
   complete() {
-    if (!this.isActive() && !this.isRunning() && !this.isPaused()) return false;
+    if (!this.isReady() && !this.isRunning() && !this.isPaused()) return false;
     this.#changeState(SubmissionState.COMPLETED);
     return true;
   }
@@ -197,8 +197,8 @@ class Submission {
   isPending() {
     return this.state == SubmissionState.PENDING;
   }
-  isActive() {
-    return this.state == SubmissionState.ACTIVE;
+  isReady() {
+    return this.state == SubmissionState.READY;
   }
   isRunning() {
     return this.state == SubmissionState.RUNNING;
