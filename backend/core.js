@@ -114,7 +114,7 @@ class Mendieta {
 class Activity {
   id = uuid();
   name;
-  testDuration = 60000; // TODO(Richo): Make it configurable!
+  testDuration = 60000 * 1.5; // TODO(Richo): Make it configurable!
   submissions = [];
 
   constructor(name) {

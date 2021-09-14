@@ -47,9 +47,19 @@ function initUpdateStreamController(app, mendieta) {
     ws.onmessage = (msg) => {
       if (client.id) return;
       client.id = msg.data;
-      // TODO(Richo): Maybe here we should send the currently active submission?
-      // That way, if the user reloads the page with the turn notifier modal open
-      // it will immediately get the state back.
+      try {
+        const submission = mendieta.submissions.find(s => s.isActive());
+        if (client.id == submission.author.id) {
+          // TODO(Richo): This code is repeated below...
+          client.socket.send(JSONX.stringify({
+            type: "submission-update",
+            timestamp: Date.now(),
+            data: submission // TODO(Richo): Send some activity info as well as the submission?
+          }))
+        }
+      } catch (err) {
+
+      }
     };
     ws.onclose = () => {
       clients = clients.filter(c => c != client);
