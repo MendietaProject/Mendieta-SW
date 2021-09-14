@@ -81,10 +81,14 @@ function initMainScreen(currentActivity) {
     }
   });
 
-  Mendieta.onUpdate((currentActivity) => {
-    // TODO(Richo): Use currentActivity to reload the table data without going to the server again
+  Mendieta.on("activity-update", activity => {
+    // TODO(Richo): Use activity data to reload the table without going to the server again
     table.ajax.reload();
   });
+  Mendieta.on("submission-update", submission => {
+    // TODO(Richo): Use the submission data to update the table without going to the server again
+    table.ajax.reload();
+  })
 }
 
 function backToMenu(){

@@ -2,8 +2,10 @@
 let Mendieta = (function () {
 
   let socket = null;
-  let currentActivity = null;
-  let observers = [];
+  let observers = {
+    "activity-update": [],
+    "submission-update": [],
+  };
 
   function getCurrentActivity() {
     return new Promise((resolve, reject) => {
@@ -82,20 +84,19 @@ let Mendieta = (function () {
       console.error(err);
     }
     socket.onmessage = function (msg) {
-      currentActivity = JSON.parse(msg.data);
-      for (let i = 0; i < observers.length; i++) {
-        let fn = observers[i];
+      const evt = JSON.parse(msg.data);
+      (observers[evt.type] || []).forEach(fn => {
         try {
-          fn(currentActivity);
+          fn(evt.data);
         } catch (err) {
           console.error(err);
         }
-      }
+      });
     }
   }
 
-  function onUpdate(fn) {
-    observers.push(fn);
+  function on(key, fn) {
+    observers[key].push(fn);
   }
 
   return {
@@ -106,6 +107,6 @@ let Mendieta = (function () {
     cancelCurrentActivity: cancelCurrentActivity,
     cancelSubmission: cancelSubmission,
     connectToServer: connectToServer,
-    onUpdate: onUpdate,
+    on: on,
   }
 })();
