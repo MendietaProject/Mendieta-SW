@@ -57,23 +57,43 @@ function initUpdateStreamController(app, mendieta) {
     };
   });
 
-  mendieta.onUpdate(submission => {
+
+  // TODO(Richo): Cambiar la info que le mandamos a los clientes dependiendo de si son admin o student
+  // TODO(Richo): Agregar el timestamp para que los clientes puedan estimar la diferencia con el servidor
+  // TODO(Richo): A los admins les mandamos todas las submissions, a los students sólo la activa (y si son autores)
+
+  mendieta.on("activity-update", activity => {
     console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
 
-    // TODO(Richo): Qué info le tenemos que mandar a los clientes??
-    // TODO(Richo): This is a mess. It suggests that we need to think about the
-    // update events a little more...
-    const json_activity = JSONX.stringify(mendieta.currentActivity);
-    const json_submission = JSONX.stringify(submission);
-    clients.forEach(client => {
+    const data = JSONX.stringify(activity);
+    clients.filter(c => c.id == null).forEach(client => {
       try {
-        let ws = client.socket;
-        if (client.id == null) {
-          ws.send(json_activity);
-        } else if (submission && client.id == submission.author.id) {
-          ws.send(json_submission);
-        }
+        const ws = client.socket;
+        ws.send(data);
+      } catch (err) {
+        console.error(err);
+      }
+    })
+  });
+  mendieta.on("submission-update", submission => {
+    console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
+
+    const data = JSONX.stringify(submission);
+    clients.filter(c => c.id == submission.author.id).forEach(client => {
+      try {
+        const ws = client.socket;
+        ws.send(data);
       } catch (err){
+        console.error(err);
+      }
+    });
+
+    // TODO(Richo): A los admins le mandamos la activity por ahora
+    clients.filter(c => c.id == null).forEach(client => {
+      try {
+        const ws = client.socket;
+        ws.send(JSONX.stringify(mendieta.currentActivity));
+      } catch (err) {
         console.error(err);
       }
     });

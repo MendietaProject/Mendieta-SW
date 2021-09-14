@@ -4,7 +4,10 @@ const Queue = require("./utils/queue.js");
 class Mendieta {
   #currentQueue = new Queue();
   #currentActivity = null;
-  #observers = [];
+  #observers = {
+    "activity-update": [],
+    "submission-update": [],
+  };
 
   // TODO(Richo): These should probably be handled by the storage
   activities = [];
@@ -19,7 +22,7 @@ class Mendieta {
     if (activity && !this.findActivity(activity.id)) {
       this.addActivity(activity);
     }
-    this.update();
+    this.#activityUpdate();
   }
 
   get submissions() {
@@ -58,50 +61,48 @@ class Mendieta {
     // TODO(Richo): Throw if no current activity is set yet!
     this.#currentActivity.addSubmission(submission);
     this.#currentQueue.put(submission);
-    this.update(submission);
+    this.#activityUpdate();
   }
   activateSubmission(submission) {
-    if (submission.activate()) {
-      this.update(submission);
-    }
+    this.#submissionUpdateIf(submission, s => s.activate());
   }
   pauseSubmission(submission) {
-    if (submission.pause()) {
-      this.update(submission);
-    }
+    this.#submissionUpdateIf(submission, s => s.pause());
   }
   startSubmission(submission) {
-    if (submission.start()) {
-      this.update(submission);
-    }
+    this.#submissionUpdateIf(submission, s => s.start());
   }
   stopSubmission(submission) {
-    if (submission.stop()) {
-      this.update(submission);
-    }
+    this.#submissionUpdateIf(submission, s => s.stop());
   }
   completeSubmission(submission) {
-    if (submission.complete()) {
-      this.update(submission);
-    }
+    this.#submissionUpdateIf(submission, s => s.complete());
   }
   cancelSubmission(submission) {
-    if (submission.cancel()) {
-      this.update(submission);
-    }
+    this.#submissionUpdateIf(submission, s => s.cancel());
   }
 
   nextSubmission() {
     return this.#currentQueue.take();
   }
 
-  onUpdate(fn) {
-    this.#observers.push(fn);
+  on(key, fn) {
+    let observers = this.#observers[key];
+    if (!observers) throw "Invalid update key!";
+    observers.push(fn);
   }
-  update(submission) {
-    this.#observers.forEach(fn => {
+  #activityUpdate() {
+    this.#update("activity-update", this.#currentActivity);
+  }
+  #submissionUpdateIf(submission, fn) {
+    if (fn(submission)) {
+      this.#update("submission-update", submission);
+    }
+  }
+  #update(key, data) {
+    this.#observers[key].forEach(fn => {
       try {
-        fn(submission);
+        fn(data);
       } catch (err) {
         console.error(err);
       }
@@ -181,15 +182,17 @@ class Submission {
   }
   stop() {
     // NOTE(Richo): Stopping before the program even run once means cancellation, otherwise completion.
-    return this.isReady() ? this.cancel() : this.complete();
+    return this.isReady() ?
+      this.cancel() :
+      this.complete();
   }
   cancel() {
-    if (this.isCompleted() || this.isCanceled()) return false;
+    if (this.isFinished()) return false;
     this.#changeState(SubmissionState.CANCELED);
     return true;
   }
   complete() {
-    if (!this.isReady() && !this.isRunning() && !this.isPaused()) return false;
+    if (!this.isActive()) return false;
     this.#changeState(SubmissionState.COMPLETED);
     return true;
   }
@@ -211,6 +214,10 @@ class Submission {
   }
   isCompleted() {
     return this.state == SubmissionState.COMPLETED;
+  }
+  
+  isActive() {
+    return this.isReady() || this.isRunning() || this.isPaused();
   }
   isFinished() {
     return this.isCompleted() || this.isCanceled();
