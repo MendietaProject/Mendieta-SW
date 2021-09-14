@@ -58,36 +58,36 @@ class Mendieta {
     // TODO(Richo): Throw if no current activity is set yet!
     this.#currentActivity.addSubmission(submission);
     this.#currentQueue.put(submission);
-    this.update();
+    this.update(submission);
   }
   activateSubmission(submission) {
     if (submission.activate()) {
-      this.update();
+      this.update(submission);
     }
   }
   pauseSubmission(submission) {
     if (submission.pause()) {
-      this.update();
+      this.update(submission);
     }
   }
   startSubmission(submission) {
     if (submission.start()) {
-      this.update();
+      this.update(submission);
     }
   }
   stopSubmission(submission) {
     if (submission.stop()) {
-      this.update();
+      this.update(submission);
     }
   }
   completeSubmission(submission) {
     if (submission.complete()) {
-      this.update();
+      this.update(submission);
     }
   }
   cancelSubmission(submission) {
     if (submission.cancel()) {
-      this.update();
+      this.update(submission);
     }
   }
 
@@ -98,10 +98,10 @@ class Mendieta {
   onUpdate(fn) {
     this.#observers.push(fn);
   }
-  update() {
+  update(submission) {
     this.#observers.forEach(fn => {
       try {
-        fn(); // TODO(Richo): What should we send as argument?
+        fn(submission);
       } catch (err) {
         console.error(err);
       }

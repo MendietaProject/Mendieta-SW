@@ -46,7 +46,10 @@ function initUpdateStreamController(app, mendieta) {
     console.log(`Se conectó un cliente! (# clientes: ${clients.length})`);
     ws.onmessage = (msg) => {
       if (client.id) return;
-      client.id == msg.data;
+      client.id = msg.data;
+      // TODO(Richo): Maybe here we should send the currently active submission?
+      // That way, if the user reloads the page with the turn notifier modal open
+      // it will immediately get the state back.
     };
     ws.onclose = () => {
       clients = clients.filter(c => c != client);
@@ -54,15 +57,22 @@ function initUpdateStreamController(app, mendieta) {
     };
   });
 
-  mendieta.onUpdate(() => {
+  mendieta.onUpdate(submission => {
     console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
 
     // TODO(Richo): Qué info le tenemos que mandar a los clientes??
-    let jsonState = JSON.stringify(mendieta.currentActivity);
+    // TODO(Richo): This is a mess. It suggests that we need to think about the
+    // update events a little more...
+    const json_activity = JSONX.stringify(mendieta.currentActivity);
+    const json_submission = JSONX.stringify(submission);
     clients.forEach(client => {
       try {
         let ws = client.socket;
-        ws.send(jsonState);
+        if (client.id == null) {
+          ws.send(json_activity);
+        } else if (submission && client.id == submission.author.id) {
+          ws.send(json_submission);
+        }
       } catch (err){
         console.error(err);
       }
