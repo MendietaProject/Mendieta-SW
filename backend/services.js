@@ -65,7 +65,11 @@ function initUpdateStreamController(app, mendieta) {
   mendieta.on("activity-update", activity => {
     console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
 
-    const data = JSONX.stringify(activity);
+    const data = JSONX.stringify({
+      type: "activity-update",
+      timestamp: Date.now(),
+      data: activity
+    });
     clients.filter(c => c.id == null).forEach(client => {
       try {
         const ws = client.socket;
@@ -78,22 +82,16 @@ function initUpdateStreamController(app, mendieta) {
   mendieta.on("submission-update", submission => {
     console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
 
-    const data = JSONX.stringify(submission);
-    clients.filter(c => c.id == submission.author.id).forEach(client => {
+    const data = JSONX.stringify({
+      type: "submission-update",
+      timestamp: Date.now(),
+      data: submission // TODO(Richo): Send some activity info as well as the submission?
+    });
+    clients.filter(c => c.id == null || c.id == submission.author.id).forEach(client => {
       try {
         const ws = client.socket;
         ws.send(data);
       } catch (err){
-        console.error(err);
-      }
-    });
-
-    // TODO(Richo): A los admins le mandamos la activity por ahora
-    clients.filter(c => c.id == null).forEach(client => {
-      try {
-        const ws = client.socket;
-        ws.send(JSONX.stringify(mendieta.currentActivity));
-      } catch (err) {
         console.error(err);
       }
     });
