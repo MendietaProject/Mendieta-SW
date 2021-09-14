@@ -64,7 +64,8 @@ class Mendieta {
     this.#activityUpdate();
   }
   activateSubmission(submission) {
-    this.#submissionUpdateIf(submission, s => s.activate());
+    const testDuration = this.#currentActivity.testDuration;
+    this.#submissionUpdateIf(submission, s => s.activate(testDuration));
   }
   pauseSubmission(submission) {
     this.#submissionUpdateIf(submission, s => s.pause());
@@ -113,6 +114,7 @@ class Mendieta {
 class Activity {
   id = uuid();
   name;
+  testDuration = 60000; // TODO(Richo): Make it configurable!
   submissions = [];
 
   constructor(name) {
@@ -142,6 +144,9 @@ class Submission {
   author;
   program;
 
+  testBeginTime;
+  testDuration;
+
   stateChanged;
   #stateChangedResolver;
 
@@ -165,8 +170,10 @@ class Submission {
     resolver(state);
   }
 
-  activate() {
+  activate(testDuration) {
     if (!this.isPending()) return false;
+    this.testDuration = testDuration;
+    this.testBeginTime = Date.now();
     this.#changeState(SubmissionState.READY);
     return true;
   }
@@ -215,7 +222,7 @@ class Submission {
   isCompleted() {
     return this.state == SubmissionState.COMPLETED;
   }
-  
+
   isActive() {
     return this.isReady() || this.isRunning() || this.isPaused();
   }

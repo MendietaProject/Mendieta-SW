@@ -23,8 +23,7 @@ async function processSubmission(submission, mendieta) {
   mendieta.activateSubmission(submission);
   console.log(`${new Date().toISOString()} -> Submission ${submission.id} is now WAITING!`);
 
-  // TODO(Richo): Make the timeout configurable...
-  let submissionTimeout = timeout(60000);
+  let submissionTimeout = timeout(submission.testDuration);
   while (!submission.isFinished()) {
     let state = await Promise.race([submissionTimeout, submission.stateChanged]);
     if (!state) {
