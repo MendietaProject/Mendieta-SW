@@ -40,6 +40,14 @@ function handleError(fn) {
 function initUpdateStreamController(app, mendieta) {
   let clients = [];
 
+  function createUpdateMsg(type, data) {
+    return JSONX.stringify({
+      type: type,
+      timestamp: Date.now(),
+      data: data
+    });
+  }
+
   app.ws('/updates', (ws, req) => {
     let client = {id: null, socket: ws};
     clients.push(client);
@@ -47,18 +55,15 @@ function initUpdateStreamController(app, mendieta) {
     ws.onmessage = (msg) => {
       if (client.id) return;
       client.id = msg.data;
+
       try {
         const submission = mendieta.submissions.find(s => s.isActive());
         if (client.id == submission.author.id) {
-          // TODO(Richo): This code is repeated below...
-          client.socket.send(JSONX.stringify({
-            type: "submission-update",
-            timestamp: Date.now(),
-            data: submission // TODO(Richo): Send some activity info as well as the submission?
-          }))
+          const msg = createUpdateMsg("submission-update", submission);
+          client.socket.send(msg);
         }
       } catch (err) {
-
+        console.error(err);
       }
     };
     ws.onclose = () => {
@@ -67,40 +72,28 @@ function initUpdateStreamController(app, mendieta) {
     };
   });
 
-
-  // TODO(Richo): Cambiar la info que le mandamos a los clientes dependiendo de si son admin o student
-  // TODO(Richo): Agregar el timestamp para que los clientes puedan estimar la diferencia con el servidor
-  // TODO(Richo): A los admins les mandamos todas las submissions, a los students sólo la activa (y si son autores)
-
   mendieta.on("activity-update", activity => {
-    console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
+    console.log(`Se actualizó la actividad! (# clientes: ${clients.length})`);
 
-    const data = JSONX.stringify({
-      type: "activity-update",
-      timestamp: Date.now(),
-      data: activity
-    });
+    const msg = createUpdateMsg("activity-update", activity);
     clients.filter(c => c.id == null).forEach(client => {
       try {
         const ws = client.socket;
-        ws.send(data);
+        ws.send(msg);
       } catch (err) {
         console.error(err);
       }
     })
   });
-  mendieta.on("submission-update", submission => {
-    console.log(`Se actualizó el servidor! (# clientes: ${clients.length})`);
 
-    const data = JSONX.stringify({
-      type: "submission-update",
-      timestamp: Date.now(),
-      data: submission // TODO(Richo): Send some activity info as well as the submission?
-    });
+  mendieta.on("submission-update", submission => {
+    console.log(`Se actualizó una submission! (# clientes: ${clients.length})`);
+
+    const msg = createUpdateMsg("submission-update", submission);
     clients.filter(c => c.id == null || c.id == submission.author.id).forEach(client => {
       try {
         const ws = client.socket;
-        ws.send(data);
+        ws.send(msg);
       } catch (err){
         console.error(err);
       }
