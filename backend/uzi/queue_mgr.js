@@ -8,7 +8,7 @@ async function start(mendieta) {
   try {
     await uzi.connect("COM4"); // TODO(Richo): Make it configurable...
     await uzi.run(empty_program);
-    while (true) { // TODO(Richo): While still connected?
+    while (true) {
       let submission = await mendieta.nextSubmission();
       if (submission.isPending()) {
         await processSubmission(submission, mendieta);
@@ -21,25 +21,16 @@ async function start(mendieta) {
 
 async function processSubmission(submission, mendieta) {
   mendieta.activateSubmission(submission);
-  console.log(`${new Date().toISOString()} -> Submission ${submission.id} is now WAITING!`);
 
   let submissionTimeout = timeout(submission.testDuration);
   while (!submission.isFinished()) {
-    let state = await Promise.race([submissionTimeout, submission.stateChanged]);
-    if (!state) {
-      // NOTE(Richo): TIMEOUT! If the submission state didn't change it means we got here on timeout
+    let stateChanged = await Promise.race([submissionTimeout, submission.stateChanged]);
+    if (!stateChanged) { // TIMEOUT!
       mendieta.completeSubmission(submission);
-      console.log(`${new Date().toISOString()} -> Submission ${submission.id} COMPLETED succesfully!`);
     } else if (submission.isRunning()) {
       await uzi.run(submission.program);
-      console.log(`${new Date().toISOString()} -> Submission ${submission.id} is now RUNNING!`);
     } else if (submission.isPaused()) {
       await uzi.run(empty_program);
-      console.log(`${new Date().toISOString()} -> Submission ${submission.id} is now PAUSED!`);
-    } else if (submission.isCompleted()) {
-      console.log(`${new Date().toISOString()} -> Submission ${submission.id} was COMPLETED manually by the user!`);
-    } else if (submission.isCanceled()) {
-      console.log(`${new Date().toISOString()} -> Submission ${submission.id} was CANCELED!`);
     }
   }
 
