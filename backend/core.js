@@ -167,6 +167,7 @@ class Submission {
     let resolver = this.#stateChangedResolver;
     this.initStateChanged();
     this.state = state;
+    console.log(`${new Date().toISOString()} -> Submission ${this.id} is now ${this.state}!`);
     resolver(state);
   }
 
