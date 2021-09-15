@@ -58,7 +58,7 @@ function initUpdateStreamController(app, mendieta) {
 
       try {
         const submission = mendieta.submissions.find(s => s.isActive());
-        if (client.id == submission.author.id) {
+        if (submission && submission.author.id == client.id) {
           const msg = createUpdateMsg("submission-update", submission);
           client.socket.send(msg);
         }
