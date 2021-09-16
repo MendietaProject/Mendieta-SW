@@ -1,5 +1,3 @@
-backend/Files/workTeams.json
-backend/node_modules/boxen/package.json
 # Logs
 logs
 *.log
