@@ -1,4 +1,4 @@
-const uzi = require("./controller.js");
+const uzi = require("./uzi/controller.js");
 
 function timeout(ms) { return new Promise(res => setTimeout(res, ms)); }
 
