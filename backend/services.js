@@ -11,8 +11,7 @@ function start (mendieta) {
   app.use(express.urlencoded({ extended: true }));
 
   // TODO(Richo): This paths should be configurable
-  app.use(express.static("../frontend/src"));
-  app.use(express.static("../physicalbits/gui"));
+  app.use(express.static("../frontend"));
 
   initUpdateStreamController(app, mendieta);
   initActivityController(app, mendieta);
