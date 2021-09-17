@@ -2127,7 +2127,7 @@ let UziBlock = (function () {
           minScale: 0.3,
           scaleSpeed: 1.03
         },
-        media: "libs/google-blockly/media/"
+        media: "../libs/google-blockly/media/"
       });
 
       i18n.on("change", function () {
