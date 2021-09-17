@@ -6,7 +6,7 @@ This is an API for the Mendieta project that runs on nodejs
 * Nodemon
   
 ## Installing dependencies
-To install the requiered dependencies, use
+To install the required dependencies, use
 
 > npm install
 
