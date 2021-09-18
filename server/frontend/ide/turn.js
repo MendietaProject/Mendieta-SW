@@ -5,6 +5,7 @@ let TurnNotifier = (function () {
   let countdownTimeout = null;
 
   function formatDuration(durationSeconds) {
+    durationSeconds = Math.max(durationSeconds, 0);
     let seconds = Math.floor(durationSeconds % 60);
     let minutes = Math.floor(durationSeconds / 60);
     let hours = Math.floor(durationSeconds / 3600);
