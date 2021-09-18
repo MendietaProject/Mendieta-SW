@@ -71,29 +71,42 @@ let Mendieta = (function () {
     });
   }
 
-  function connectToServer() {
-    // TODO(Richo): Handle server disconnect gracefully
-    let url = "ws://" + location.host + "/updates";
-    socket = new WebSocket(url);
-
-    socket.onerror = function (err) {
-      console.error(err);
-    }
-    socket.onopen = function () {
-      socket.send(student.id);
-    }
-    socket.onmessage = function (msg) {
-      const evt = JSON.parse(msg.data);
-      (observers[evt.type] || []).forEach(fn => {
-        try {
-          fn(evt.data);
-        } catch (err) {
-          console.error(err);
-        }
-      });
-    }
+  function connectToWebsocket(url) {
+    return new Promise((res, rej) => {
+      const socket = new WebSocket(url);
+      socket.onerror = rej;
+      socket.onopen = () => res(socket);
+    });
   }
 
+  function connectToServer() {
+    // TODO(Richo): Handle server disconnect gracefully
+    let urls = ["wss://" + location.host + "/updates",
+                "ws://" + location.host + "/updates"];
+    function tryToConnect() {
+      let url = urls.shift();
+      if (!url) throw "Connection to server failed!";
+      return connectToWebsocket(url)
+        .then(s => {
+          socket = s;
+          socket.send(student.id);
+          socket.onmessage = function (msg) {
+            const evt = JSON.parse(msg.data);
+            (observers[evt.type] || []).forEach(fn => {
+              try {
+                fn(evt.data);
+              } catch (err) {
+                console.error(err);
+              }
+            });
+          }
+        })
+        .catch(tryToConnect);
+    }
+
+    return tryToConnect();
+  }
+  
   function on(key, fn) {
     observers[key].push(fn);
   }
