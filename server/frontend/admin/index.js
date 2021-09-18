@@ -3,8 +3,26 @@
 $(document).ready(function () {
   initActivityMaker();
   initActivityChooser();
-  Mendieta.connectToServer();
+  connectToServer();
 });
+
+function connectToServer() {
+  let connectionAttempt = 0;
+
+  function connect() {
+    connectionAttempt++;
+    return Mendieta.connectToServer()
+      .then(() => connectionAttempt = 0);
+  }
+
+  function reconnect() {
+    let timeout = Math.min(connectionAttempt * 1000, 5000);
+    setTimeout(() => connect().catch(reconnect), timeout);
+  }
+
+  Mendieta.on("server-disconnect", reconnect);
+  return connect().catch(reconnect);
+}
 
 function initActivityMaker() {
   // TODO(Richo): Disable form after submission (re-enable on complete) to prevent multiple submissions

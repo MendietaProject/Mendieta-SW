@@ -6,6 +6,7 @@ let Mendieta = (function () {
   let observers = {
     "activity-update": [],
     "submission-update": [],
+    "server-disconnect" : [],
   };
 
   function registerStudent(data) {
@@ -80,7 +81,6 @@ let Mendieta = (function () {
   }
 
   function connectToServer() {
-    // TODO(Richo): Handle server disconnect gracefully
     let urls = ["wss://" + location.host + "/updates",
                 "ws://" + location.host + "/updates"];
     function tryToConnect() {
@@ -92,23 +92,31 @@ let Mendieta = (function () {
           socket.send(student.id);
           socket.onmessage = function (msg) {
             const evt = JSON.parse(msg.data);
-            (observers[evt.type] || []).forEach(fn => {
-              try {
-                fn(evt.data);
-              } catch (err) {
-                console.error(err);
-              }
-            });
-          }
+            notifyObservers(evt.type, evt.data);
+          };
+          socket.onclose = function (evt) {
+            socket = null;
+            notifyObservers("server-disconnect", evt);
+          };
         })
         .catch(tryToConnect);
     }
 
     return tryToConnect();
   }
-  
+
   function on(key, fn) {
     observers[key].push(fn);
+  }
+
+  function notifyObservers(key, data) {
+    (observers[key] || []).forEach(fn => {
+      try {
+        fn(data);
+      } catch (err) {
+        console.error(err);
+      }
+    });
   }
 
   return {
