@@ -2,42 +2,7 @@ let TurnNotifier = (function () {
 
   let activeSubmission = null;
   let hidingModal = false; // TODO(Richo): This sucks!
-  let countdownTimeout = null;
-
-  function formatDuration(durationSeconds) {
-    durationSeconds = Math.max(durationSeconds, 0);
-    let seconds = Math.floor(durationSeconds % 60);
-    let minutes = Math.floor(durationSeconds / 60);
-    let hours = Math.floor(durationSeconds / 3600);
-    let result = seconds.toString();
-    if (seconds < 10) { result = "0" + result; }
-    result = minutes + ":" + result;
-    if (minutes < 10) { result = "0" + result; }
-    if (hours > 0) {
-      result = hours + ":" + result;
-    }
-    return result;
-  }
-
-  function startCountdownTimer(duration) {
-    let begin = Date.now();
-
-    function updateTimer() {
-      let msRemaining = duration - (Date.now() - begin);
-      let secondsRemaining = msRemaining / 1000;
-      $("#turn-notifier-timer").text(formatDuration(secondsRemaining));
-      $("#turn-notifier-timer").css("color", secondsRemaining < 10 ? "red" : "inherit");
-      console.log("COUNTDOWN");
-      countdownTimeout = setTimeout(updateTimer, 1000);
-    }
-
-    stopCountdownTimer();
-    updateTimer();
-  }
-
-  function stopCountdownTimer() {
-    clearTimeout(countdownTimeout);
-  }
+  let countdown = null;
 
   function updateGUI() {
     let submission = activeSubmission;
@@ -79,6 +44,7 @@ let TurnNotifier = (function () {
   }
 
   function init() {
+    countdown = Countdown.on($("#turn-notifier-timer"));
 
     $("#turn-notifier-start-button").on("click", () => Mendieta.start(activeSubmission));
     $("#turn-notifier-pause-button").on("click", () => Mendieta.pause(activeSubmission));
@@ -99,7 +65,7 @@ let TurnNotifier = (function () {
         let previous = activeSubmission;
         activeSubmission = submission;
         if (!previous) {
-          startCountdownTimer(submission.testDuration - (timestamp - submission.testBeginTime));
+          countdown.start(submission.testDuration - (timestamp - submission.testBeginTime));
           showModal();
         }
       } else if (isFinished(submission)) {
@@ -108,7 +74,7 @@ let TurnNotifier = (function () {
         if (activeSubmission && activeSubmission.id == submission.id) {
           activeSubmission = null;
           hideModal();
-          stopCountdownTimer();
+          countdown.stop();
         }
       }
       updateGUI();
