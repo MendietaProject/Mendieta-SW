@@ -19,16 +19,24 @@ let TurnNotifier = (function () {
     return result;
   }
 
-  function updateCountdownTimer() {
-    if (!activeSubmission) return;
-    let msPassed = Date.now() - activeSubmission.testBeginTime;
-    let msRemaining = activeSubmission.testDuration - msPassed;
-    let secondsRemaining = msRemaining / 1000;
-    $("#turn-notifier-timer").text(formatDuration(secondsRemaining));
-    $("#turn-notifier-timer").css("color", secondsRemaining < 10 ? "red" : "inherit");
+  function startCountdownTimer(duration) {
+    let begin = Date.now();
 
-    console.log("COUNTDOWN!")
-    countdownTimeout = setTimeout(updateCountdownTimer, 1000);
+    function updateTimer() {
+      let msRemaining = duration - (Date.now() - begin);
+      let secondsRemaining = msRemaining / 1000;
+      $("#turn-notifier-timer").text(formatDuration(secondsRemaining));
+      $("#turn-notifier-timer").css("color", secondsRemaining < 10 ? "red" : "inherit");
+      console.log("COUNTDOWN");
+      countdownTimeout = setTimeout(updateTimer, 1000);
+    }
+
+    stopCountdownTimer();
+    updateTimer();
+  }
+
+  function stopCountdownTimer() {
+    clearTimeout(countdownTimeout);
   }
 
   function updateGUI() {
@@ -84,13 +92,15 @@ let TurnNotifier = (function () {
       hidingModal = false;
     });
 
-    Mendieta.on("submission-update", submission => {
+    Mendieta.on("submission-update", evt => {
+      let timestamp = evt.timestamp;
+      let submission = evt.data;
       if (isActive(submission)) {
-        const previous = activeSubmission;
+        let previous = activeSubmission;
         activeSubmission = submission;
         if (!previous) {
+          startCountdownTimer(submission.testDuration - (timestamp - submission.testBeginTime));
           showModal();
-          updateCountdownTimer();
         }
       } else if (isFinished(submission)) {
         // TODO(Richo): If the activeSubmission is not set but we got here then it must mean one of our pending
@@ -98,7 +108,7 @@ let TurnNotifier = (function () {
         if (activeSubmission && activeSubmission.id == submission.id) {
           activeSubmission = null;
           hideModal();
-          clearTimeout(countdownTimeout);
+          stopCountdownTimer();
         }
       }
       updateGUI();

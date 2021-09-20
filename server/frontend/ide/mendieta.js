@@ -92,7 +92,7 @@ let Mendieta = (function () {
           socket.send(student.id);
           socket.onmessage = function (msg) {
             const evt = JSON.parse(msg.data);
-            notifyObservers(evt.type, evt.data);
+            notifyObservers(evt.type, evt);
           };
           socket.onclose = function (evt) {
             socket = null;
