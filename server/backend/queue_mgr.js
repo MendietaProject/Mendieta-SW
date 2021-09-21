@@ -4,9 +4,9 @@ function timeout(ms) { return new Promise(res => setTimeout(res, ms)); }
 
 let empty_program = {compiled: {"__class__": "UziProgram", "globals": [], "scripts": []}};
 
-async function start(mendieta) {
+async function start(mendieta, port) {
   try {
-    await uzi.connect("COM4"); // TODO(Richo): Make it configurable...
+    await uzi.connect(port);
     await uzi.run(empty_program);
     while (true) {
       let submission = await mendieta.nextSubmission();
