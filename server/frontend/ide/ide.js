@@ -36,8 +36,8 @@ const fs = require('fs');
         .then(initializeServerNotFoundErrorModal)
         .then(initializeOptionsModal)
         .then(initializeTurnNotifier)
-        .then(initializeMendietaClient)
-        .then(hideLoadingScreen);
+        .then(hideLoadingScreen)
+        .then(initializeMendietaClient);
     },
   };
 
