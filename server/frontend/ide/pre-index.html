@@ -11,49 +11,53 @@
 <body>
   <nav class="navbar navbar-dark bg-dark">
     <a class="navbar-brand">
+      <img src="/img/android-chrome-192x192.png" class="d-inline-block align-top" width="30" height="30">
       Mendieta
     </a>
+    <div>
+      <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+    </div>
+    <div>
+      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+    </div>
   </nav>
   <div class="container">
-    <div id="App" class="row justify-content-center pt-5">
-          <div class="col-4">
-            <div class="card">
-                <div class="card-header" id = "newUser">
-                    <h4>New user</h4>
-                </div>
-                <form id="product-form" class="card-body">
-                    <div class="form-group">
-                        <input type="text" id="name" placeholder="User name" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="password" placeholder="Password" class="form-control">
-                    </div>
-                    <input type="submit" value="Save" class="btn btn-primary btn-block" id = "save">
-                </form>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="card">
-                <div class="card-header" id = "newUser">
-                    <h4>Add the target</h4>
-                </div>
-                <form id="product-form" class="card-body">
-                    <input type="submit" value="Update" class="btn btn-primary btn-block" id = "update">
-                </form>
-            </div>
-          </div>
+    <div class="row">
+      <h1></h1>
+    </div><!--Ya se que es la peor forma de dejar margen, pero es temporal-->
+    <div class="row">
+    <div class="col">
+      <div class="card text-white bg-dark mb-3">
+        <div class="card-header">Teacher</div>
+      </div>
+      <div class="card text-white bg-warning mb-3">
+        <div class="card-header">Rob</div>
+        <div class="card-body">
+          <h5 class="card-title">Connected</h5>
+        </div>
+      </div>
     </div>
-</div>
-<div class="container" id = "Opciones">
-
-  <div class="row pt-5">
-    <div class="col-md-4">
-      <a href="index.html"><img src="img/tarjeta azul.png"></a>
+    <div class="col">
+      <button type="button" class="btn btn-success btn-lg btn-block"disabled>Start</button>
     </div>
-    <div class="col-md-3">
-        <a href="#"><img src="https://static.thenounproject.com/png/187803-200.png">>
+    <div class="col" id="ColFinal">
+      <div class="card text-white bg-dark mb-3">
+        <div class="card-header">Students</div>
+      </div>
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-header">Bob</div>
+        <div class="card-body">
+          <h5 class="card-title">Connected</h5>
+        </div>
+      </div>
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-header">Lucia</div>
+        <div class="card-body">
+          <h5 class="card-title">Disconnected</h5>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
-</div>
 </body>
 </html>
