@@ -1,5 +1,6 @@
 let Uzi = (function () {
 
+  // TODO(Richo): Make a proper UUID?
   let id = Math.floor(Math.random() * (2**64));
   let host = "";
   let apiURL = "";
@@ -8,9 +9,6 @@ let Uzi = (function () {
     "update" : [],
     "server-disconnect" : []
   };
-
-  // HACK(Richo): If the middleware is loaded we run locally
-  let localFlag = window.middleware != undefined;
 
 
   let Uzi = {
@@ -25,6 +23,11 @@ let Uzi = (function () {
         availablePorts: [],
       },
       output: [],
+      tasks: [],
+      memory: {
+        arduino: null,
+        uzi: null,
+      },
       pins: {
         available: [
           {name: "D2", reporting: false},
@@ -56,10 +59,10 @@ let Uzi = (function () {
     socket: null,
 
     start: function (preferredHost) {
-      if (localFlag) {
-        // NOTE(Richo): Early exit, don't attempt to connect at all
-        return Promise.resolve();
-      }
+      middleware.simulator.on_update(update);
+
+      // HACK(Richo): Early exit, we don't bother connecting to the server
+      return Promise.resolve();
 
       host = preferredHost || "";
       apiURL = host ? "http://" + host : "";
@@ -69,10 +72,15 @@ let Uzi = (function () {
         let i = 0;
         let begin = +new Date();
         function connect() {
+          let elapsedTime = (+new Date()) - begin;
+          if (elapsedTime >= 30000) {
+            console.error("Server not found! Giving up...");
+            return reject();
+          }
           console.log("ATTEMPT: " + (++i));
-          console.log("Elapsed time: " + ((+new Date()) - begin));
+          console.log("Elapsed time: " + elapsedTime);
           updateLoop().then(resolve).catch(err => {
-            setTimeout(connect, 500);
+            setTimeout(connect, 1000);
           });
         }
         connect();
@@ -84,23 +92,29 @@ let Uzi = (function () {
     },
 
     connect: function (port) {
+      if (port == "simulator") {
+        return middleware.simulator.connect(update);
+      }
+
       let url = apiURL + "/uzi/connect";
       let data = { id: id, port: port };
       return POST(url, data);
     },
 
     disconnect: function () {
+      if (Uzi.state.connection.portName == "simulator") {
+        return middleware.simulator.disconnect();
+      }
+
       let url = apiURL + "/uzi/disconnect";
       let data = { id: id };
       return POST(url, data);
     },
 
 		compile: function (src, type, silent) {
-      if (localFlag) {
-        // NOTE(Richo): Instead of going to the server to compile, we do it locally
-        return compileLocal(src, type, silent);
-      }
-
+      // NOTE(Richo): Instead of going to the server to compile, we do it locally
+      return middleware.simulator.compile(src, type, silent);
+      
       let url = apiURL + "/uzi/compile";
       let data = {
         id: id,
@@ -112,6 +126,10 @@ let Uzi = (function () {
   	},
 
     run: function (src, type, silent) {
+      if (Uzi.state.connection.portName == "simulator") {
+        return middleware.simulator.run(src, type, silent);
+      }
+
       let url = apiURL + "/uzi/run";
       let data = {
         id: id,
@@ -123,6 +141,10 @@ let Uzi = (function () {
   	},
 
     install: function (src, type) {
+      if (Uzi.state.connection.portName == "simulator") {
+        return middleware.simulator.install(src, type);
+      }
+
       let url = apiURL + "/uzi/install";
       let data = {
         id: id,
@@ -133,6 +155,10 @@ let Uzi = (function () {
     },
 
     setPinReport: function (pins, report) {
+      if (Uzi.state.connection.portName == "simulator") {
+        return middleware.simulator.set_pin_report(pins, report);
+      }
+
       let url = apiURL + "/uzi/pin-report";
       let data = {
         id: id,
@@ -143,6 +169,10 @@ let Uzi = (function () {
     },
 
     setGlobalReport: function (globals, report) {
+      if (Uzi.state.connection.portName == "simulator") {
+        return middleware.simulator.set_global_report(globals, report);
+      }
+
       let url = apiURL + "/uzi/global-report";
       let data = {
         id: id,
@@ -153,6 +183,10 @@ let Uzi = (function () {
     },
 
     setProfile: function (enabled) {
+      if (Uzi.state.connection.portName == "simulator") {
+        return middleware.simulator.set_profile(enabled);
+      }
+
       let url = apiURL + "/uzi/profile";
       let data = {
         id: id,
@@ -163,16 +197,6 @@ let Uzi = (function () {
   };
 
   function POST(url, data) {
-    if (localFlag) {
-      update({
-        output: [
-          {text: ""},
-          {type: "info", text: (new Date()).toLocaleString()},
-          {type: "error", text: "Not implemented in the DEMO version"}
-        ]
-      });
-      return Promise.resolve();
-    }
     return ajax.POST(url, data);
   }
 
@@ -182,47 +206,6 @@ let Uzi = (function () {
 
   function errorHandler (err) {
     console.log(err);
-  }
-
-  function compileLocal(src, type, silent) {
-    return new Promise((resolve, reject) => {
-      try {
-        var result = middleware.core.compile(src, type);
-        var program = {
-          type: type,
-          src: result.src,
-          compiled: result.compiled,
-          ast: result["original-ast"]
-        };
-        resolve(program);
-        var bytecodes = middleware.core.encode(program.compiled);
-        var output = [];
-        if (!silent) {
-          output = [
-            {text: ""},
-            {type: "info", text: (new Date()).toLocaleString()},
-            {type: "info", text: "Program size (bytes): %1", args: [bytecodes.length]},
-            {type: "info", text: "[%1]", args: [bytecodes.join(" ")]},
-            {type: "success", text: "Compilation successful!", args: []}
-          ]
-        }
-        update({
-          program: program,
-          output: output
-        });
-      } catch (err) {
-        if (!silent) {
-          update({
-            output: [
-              {text: ""},
-              {type: "info", text: (new Date()).toLocaleString()},
-              {type: "error", text: err.toString()}
-            ]
-          });
-        }
-        reject(err);
-      }
-    });
   }
 
   function reconnect() {
@@ -250,7 +233,7 @@ let Uzi = (function () {
       try {
         fn(Uzi.state, previousState);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
   }
@@ -259,23 +242,19 @@ let Uzi = (function () {
     return new Promise((resolve, reject) => {
       try {
         let socket = new WebSocket(wsURL + "/uzi");
-        let msgReceived = false;
         socket.onerror = function (err) {
           reject(err);
         };
         socket.onopen = function () {
           Uzi.serverAvailable = true;
+          resolve();
           socket.onmessage = function (evt) {
             try {
               let msg = evt.data;
               let data = JSONX.parse(msg);
               update(data);
-              if (!msgReceived) {
-                msgReceived = true;
-                resolve();
-              }
             } catch (e) {
-              console.log(e);
+              console.error(e);
             }
           };
           socket.onclose = function(evt) {

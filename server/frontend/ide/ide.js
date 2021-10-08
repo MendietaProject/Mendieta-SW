@@ -394,6 +394,7 @@ const fs = require('fs');
   function initializeOutputPanel() {
     Uzi.on("update", function () {
       Uzi.state.output.forEach(appendToOutput);
+      Uzi.state.output = [];
     });
 
     i18n.on("change", function () {
@@ -1097,7 +1098,6 @@ const fs = require('fs');
   }
 
   function updateGlobalsPanel() {
-    // TODO(Richo): Old variables no longer present in the program are kept in the panel!
     updateValuesPanel(Uzi.state.globals, $("#globals-table tbody"), $("#no-globals-label"), "global");
   }
 
@@ -1112,6 +1112,11 @@ const fs = require('fs');
   }
 
   function updateValuesPanel(values, $container, $emptyLabel, itemPrefix) {
+    if (!Uzi.state.connection.isConnected) {
+      // NOTE(Richo): If we're not connected we simply clear the panel
+      values = { available: [], elements: [] };
+    }
+
     let reporting = new Set();
     values.available.forEach(function (val) {
       if (val.reporting) { reporting.add(val.name); }
