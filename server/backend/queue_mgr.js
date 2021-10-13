@@ -28,7 +28,7 @@ async function processSubmission(submission, mendieta) {
     if (!stateChanged) { // TIMEOUT!
       mendieta.completeSubmission(submission);
     } else if (submission.isRunning()) {
-      await uzi.run(submission.program);
+      await uzi.run(submission.program.compiled);
     } else if (submission.isPaused()) {
       await uzi.run(empty_program);
     }

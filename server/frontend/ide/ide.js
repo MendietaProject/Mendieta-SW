@@ -678,8 +678,7 @@ const fs = require('fs');
       if (ok) {
         let program = {
           src: Uzi.state.program.src,
-          compiled: Uzi.state.program.compiled,
-          bytecodes: middleware.core.encode(Uzi.state.program.compiled),
+          compiled: Uzi.state.program.compiled
         };
         Mendieta.submit(program)
           .catch(err => MessageBox.alert("ERROR", err.toString()));
