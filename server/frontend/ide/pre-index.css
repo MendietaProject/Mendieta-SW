@@ -5,7 +5,10 @@
   width:  80%;
   height: 90%;
 }*/
-body{
+#pre{
+  position: absolute;
+  top: 0;
+  z-index: 999999999;
   margin-left: 0;
   margin-right: 0;
   background: #0F2027; 

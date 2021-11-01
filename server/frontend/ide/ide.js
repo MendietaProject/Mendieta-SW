@@ -36,58 +36,12 @@ const fs = require('fs');
         .then(initializeServerNotFoundErrorModal)
         .then(initializeOptionsModal)
         .then(initializeTurnNotifier)
-        .then(hideLoadingScreen)
-        .then(initializeMendietaClient);
+        .then(hideLoadingScreen);
     },
   };
 
-  function askForUserName() {
-    return MessageBox.prompt("Bienvenido", "Escriba su nombre:")
-      .then(value => value ? value : askForUserName())
-      .catch(askForUserName);
-  }
-
-  function loadCurrentStudent() {
-    let json = localStorage["mendieta.student"];
-    if (json) {
-      try {
-        let student = JSON.parse(json);
-        return Promise.resolve(student);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    return askForUserName()
-      .then(name => ({name: name}));
-  }
-
-  function storeCurrentStudent(student) {
-    localStorage["mendieta.student"] = JSON.stringify(student);
-  }
-
   function initializeTurnNotifier() {
     TurnNotifier.init();
-  }
-
-  function initializeMendietaClient() {
-    let connectionAttempt = 0;
-
-    function connect() {
-      connectionAttempt++;
-      return loadCurrentStudent()
-        .then(Mendieta.registerStudent)
-        .then(storeCurrentStudent)
-        .then(Mendieta.connectToServer)
-        .then(() => connectionAttempt = 0);
-    }
-
-    function reconnect() {
-      let timeout = Math.min(connectionAttempt * 1000, 5000);
-      setTimeout(() => connect().catch(reconnect), timeout);
-    }
-
-    Mendieta.on("server-disconnect", reconnect);
-    return connect().catch(reconnect);
   }
 
   function initializeLayout() {
