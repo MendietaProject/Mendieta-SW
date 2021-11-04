@@ -30,9 +30,7 @@ function LabelName() {
   }
 
 
-labelName.addEventListener("change", () => yaTengoNombre());
-
-function yaTengoNombre() {
-  button.disabled = false;
+labelName.addEventListener("keyup", () => {
+  button.disabled = labelName.value == "" || labelName.value.length > 15;
   console.log("en teoria esta listo");
-}
+});
