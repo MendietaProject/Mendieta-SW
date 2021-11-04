@@ -9,6 +9,17 @@ let Mendieta = (function () {
     "server-disconnect" : [],
   };
 
+  function getStudents() {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: "/students",
+        type: "GET",
+        success: resolve,
+        error: reject
+      });
+    });
+  }
+
   function registerStudent(data) {
     return new Promise((res, rej) => {
       $.ajax({
@@ -120,6 +131,7 @@ let Mendieta = (function () {
   }
 
   return {
+    getStudents: getStudents,
     registerStudent: registerStudent,
     connectToServer: connectToServer,
     on: on,
