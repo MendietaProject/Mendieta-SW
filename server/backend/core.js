@@ -1,5 +1,5 @@
 const { v4: uuid } = require('uuid');
-const Queue = require("./utils/queue.js");
+const Queue = require("@richov/js-async-queue");
 
 class Mendieta {
   #currentQueue = new Queue();

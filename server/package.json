@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/MendietaProject/Mendieta-SW",
   "dependencies": {
+    "@richov/js-async-queue": "^1.0.0",
     "express": "^4.17.1",
     "express-ws": "^5.0.2",
     "serialport": "^9.2.1",
