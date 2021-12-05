@@ -35,6 +35,17 @@ let Mendieta = (function () {
     });
   }
 
+  function getCurrentActivity() {
+    return new Promise((res,rej) => {
+      $.ajax({
+        url: "/activities/current",
+        type: "GET",
+        success: res,
+        error:rej
+      });
+    });
+  }
+
   function submit(program) {
     return new Promise((res, rej) => {
       $.ajax({
@@ -132,6 +143,7 @@ let Mendieta = (function () {
 
   return {
     getStudents: getStudents,
+    getCurrentActivity: getCurrentActivity,
     registerStudent: registerStudent,
     connectToServer: connectToServer,
     on: on,

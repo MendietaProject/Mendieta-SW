@@ -1,8 +1,8 @@
 const button = document.getElementById("BotStart");
 const labelName = document.getElementById("labelText");
-
 let loadStudentsTimer = true;
 startStudentsTimer();
+loadClassAssignments();
 
 button.addEventListener("click", () => {
     let connectionAttempt = 0;
@@ -59,5 +59,30 @@ function loadStudents() {
       card.append(body);
       $("#student-list").append(card);
     }
+  });
+}
+
+function loadClassAssignments()
+{
+  return Mendieta.getCurrentActivity().then(activity => {
+    /*
+      <div class="card text-white bg-dark mb-3">
+        <div class="card-header">Class</div>
+      </div>
+    */
+
+    let card = $("<div>").addClass("card text-white bg-dark mb-3");
+    let header = $("<div>").addClass("card-header").text(activity.name);
+    let body = $("<div>").addClass("card-body");
+    let text = $("<p>").addClass("card-text").text("Aca el profesor va a escribir la actividad de hoy");
+    card.append(header);
+    body.append(text);
+    card.append(body);
+    $("#class-assignment").append(card);
+    /*
+    card = $("<div>").addClass("card text-white bg-dark mb-3");
+    header = $("<div>").addClass("card-header").text("Aca el profesor va a escribir la actividad de hoy");
+    card.append(header);
+    $("#class-assignment").append(card);*/
   });
 }
