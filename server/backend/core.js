@@ -10,8 +10,16 @@ class Mendieta {
   };
 
   // TODO(Richo): These should probably be handled by the storage
-  activities = [];
+  #storage = null;
   students = [];
+
+  useStorage(storage) {
+    this.#storage = storage;
+  }
+
+  async getActivities() { // TODO(Richo): I don't want to return ALL the data about the activities! just the names!
+    return await this.#storage.getActivities();
+  }
 
   get currentActivity() {
     return this.#currentActivity;
@@ -19,8 +27,12 @@ class Mendieta {
   set currentActivity(activity) {
     // TODO(Richo): When changing activity we must reset the current queue!
     this.#currentActivity = activity;
-    if (activity && !this.findActivity(activity.id)) {
-      this.addActivity(activity);
+    this.#setCurrentActivity(activity);
+  }
+
+  async #setCurrentActivity(activity) {
+    if (activity && !(await this.findActivity(activity.id))) {
+      await this.addActivity(activity);
     }
     this.#activityUpdate();
   }
@@ -30,11 +42,11 @@ class Mendieta {
     return this.#currentActivity.submissions;
   }
 
-  findActivity(id) {
-    return this.activities.find(activity => activity.id == id);
+  async findActivity(id) {
+    return await this.#storage.findActivity(id);
   }
-  addActivity(activity) {
-    this.activities.push(activity);
+  async addActivity(activity) {
+    await this.#storage.addActivity(activity);
   }
 
   findStudent(id) {

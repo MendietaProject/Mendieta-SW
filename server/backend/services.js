@@ -34,6 +34,19 @@ function handleError(fn) {
   }
 }
 
+
+function handleErrorAsync(fn) {
+  return async (req, res) => {
+    try {
+      await fn(req, res);
+    } catch (err) {
+      res.status(err.statusCode || 500);
+      res.send(err);
+      console.error(err);
+    }
+  }
+}
+
 function initUpdateStreamController(app, mendieta) {
   let clients = [];
 
@@ -101,7 +114,9 @@ function initUpdateStreamController(app, mendieta) {
 function initActivityController(app, mendieta) {
 
   app.route("/activities")
-    .get(handleError((req, res) => res.send(mendieta.activities)));
+    .get(handleErrorAsync(async (req, res) => {
+      res.send(await mendieta.getActivities())
+    }));
 
   app.route("/activities/current")
     .get(handleError((req, res) => {
@@ -119,9 +134,9 @@ function initActivityController(app, mendieta) {
         res.sendStatus(200);
       }
     }))
-    .post(handleError((req, res) => {
+    .post(handleErrorAsync(async (req, res) => {
       if(req.body.id) {
-        var activity = mendieta.findActivity(req.body.id);
+        var activity = await mendieta.findActivity(req.body.id);
         if(activity) {
           mendieta.currentActivity = activity;
           res.send(activity);
