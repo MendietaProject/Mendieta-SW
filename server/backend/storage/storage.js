@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const { Activity, Submission } = require("../core.js");
 
 // TODO(Richo): Temporal! En algún momento vamos a persistir en disco!
 class MemoryStorage {
@@ -8,8 +9,6 @@ class MemoryStorage {
 
   start(mendieta) {
     this.#mendieta = mendieta;
-    mendieta.on("activity-update", currentActivity => {});
-    mendieta.on("submission-update", submission => {});
   }
 
   findActivity(id) {
@@ -25,8 +24,12 @@ class FileStorage {
 
   start(mendieta) {
     this.#mendieta = mendieta;
-    mendieta.on("activity-update", currentActivity => {});
-    mendieta.on("submission-update", submission => {});
+    mendieta.on("activity-update", currentActivity => {
+      // TODO(Richo): UPDATE STORAGE!
+    });
+    mendieta.on("submission-update", submission => {
+      // TODO(Richo): UPDATE STORAGE!
+    });
   }
 
   async findActivity(id) {
@@ -34,7 +37,8 @@ class FileStorage {
       // Buscar en disco archivo "/files/activities/<id>.json"
       let filePath = path.join(__dirname, "/files/activities/" + id + ".json");
       let fileContents = await fs.readFile(filePath);
-      return JSON.parse(fileContents);
+      let data = JSON.parse(fileContents);
+      return Activity.fromJSON(data);
     } catch (err) {
       if (err.code == 'ENOENT') {
         return null;

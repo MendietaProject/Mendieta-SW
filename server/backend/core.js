@@ -124,6 +124,13 @@ class Mendieta {
 }
 
 class Activity {
+  static fromJSON(json) {
+    let activity = new Activity(json.name);
+    activity.id = json.id;
+    activity.testDuration = json.testDuration;
+    activity.submissions = json.submissions.map(Submission.fromJSON);
+    return activity;
+  }
   id = uuid();
   name;
   testDuration = 60000 * 1.5; // TODO(Richo): Make it configurable!
@@ -151,6 +158,16 @@ const SubmissionState = {
 };
 
 class Submission {
+  static fromJSON(json){
+    let submission = new Submission(json.author, json.program);
+    submission.id = json.id;
+    submission.state = json.state;
+
+    // TODO(Richo): Should I even store these properties?
+    submission.testBeginTime = json.testBeginTime;
+    submission.testDuration = json.testDuration;
+    return submission;
+  }
   id = uuid();
   state = SubmissionState.PENDING;
   author;
