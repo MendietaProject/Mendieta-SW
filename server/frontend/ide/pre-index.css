@@ -8,7 +8,7 @@
 #pre{
   position: absolute;
   top: 0;
-  z-index: 999999999;
+  z-index: 1000;
   margin-left: 0;
   margin-right: 0;
   background: #0F2027; 

@@ -127,6 +127,38 @@
       </tbody>
     </table>
 
+    <div id = "pre" class="fullscreen dark-theme">
+      <div class="container py-3">
+        <div class="row">
+          <div class="col" id="class-assignment">
+          </div>
+          <div class="col" >
+            <button type="button" id = "BotStart" class="btn btn-success btn-lg btn-block"disabled>Start</button>
+          </div>
+          <div class="col">
+            <div id="teacher-list">
+              <div class="card text-white bg-dark mb-3">
+                <div class="card-header">Teacher</div>
+              </div>
+              <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Connected</div>
+              </div>
+            </div>
+            <div id="student-list">
+              <div class="card text-white bg-dark mb-3">
+                <div class="card-header">Students</div>
+              </div>
+              <div class="text-center">            
+                <div class="spinner-border text-center" role="status">
+                  <span class="sr-only">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Restore Layout Modal -->
     <div class="modal fade" id="broken-layout-modal" tabindex="-1" role="dialog"  data-backdrop="static" data-keyboard="false" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered" role="document">
@@ -530,50 +562,7 @@
         </div>
       </div>
     </div>
-    <div id = "pre" class="fullscreen dark-theme">
-      <nav class="navbar navbar-dark bg-dark">
-        <a class="navbar-brand">
-          <img src="img/mstile-144x144.png" class="d-inline-block align-top" width="60" height="60">
-          Mendieta
-        </a>
-        <div>
-          <input class="form-control mr-sm-2" id="labelText" type="search" placeholder="Name" aria-label="Search">
-        </div>
-        <div>
-              <!--(Todo) Agus No tiene sentido tener un boton de "cambio", 
-              algo vamos a poner en el extremo derecho-->
-        </div>
-      </nav>
-      <div class="container py-3">
-        <div class="row">
-          <div class="col" id="class-assignment">
-          </div>
-          <div class="col" >
-            <button type="button" id = "BotStart" class="btn btn-success btn-lg btn-block"disabled>Start</button>
-          </div>
-          <div class="col">
-            <div id="teacher-list">
-              <div class="card text-white bg-dark mb-3">
-                <div class="card-header">Teacher</div>
-              </div>
-              <div class="card text-white bg-warning mb-3">
-                <div class="card-header">Connected</div>
-              </div>
-            </div>
-            <div id="student-list">
-              <div class="card text-white bg-dark mb-3">
-                <div class="card-header">Students</div>
-              </div>
-              <div class="text-center">            
-                <div class="spinner-border text-center" role="status">
-                  <span class="sr-only">Loading...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
     <!-- JQuery/Popper/Bootstrap -->
     <script src="../libs/jquery/jquery-3.6.0.min.js" type="text/javascript"></script>
     <script type="text/javascript"> if (typeof module != "undefined") { jQuery = $ = module.exports; } </script>
