@@ -65,6 +65,8 @@ function initUpdateStreamController(app, mendieta) {
     };
     ws.onclose = () => {
       clients = clients.filter(c => c != client);
+      mendieta.removeStudent(client.id);
+
       console.log(`Se desconectó un cliente! (# clientes: ${clients.length})`);
     };
   });
@@ -73,7 +75,7 @@ function initUpdateStreamController(app, mendieta) {
     console.log(`Se actualizó la actividad! (# clientes: ${clients.length})`);
 
     const msg = createUpdateMsg("activity-update", activity);
-    clients.filter(c => c.id == null).forEach(client => {
+    clients.forEach(client => {
       try {
         const ws = client.socket;
         ws.send(msg);

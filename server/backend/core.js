@@ -52,6 +52,11 @@ class Mendieta {
     }
     return student;
   }
+  removeStudent(id) {    
+    const student = this.students.find(s => s.id == id);
+    if (!student) return;
+    this.students = this.students.filter(s => s != student);
+  }
 
   findSubmission(id) {
     // TODO(Richo): Throw if no current activity is set yet!
