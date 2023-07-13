@@ -21,11 +21,11 @@
         </div>
         <div class="form-group m-2">
             <label for="activityDescription">Descripción de la actividad</label>
-            <input type="text" class="form-control" id="description" placeholder="Describa la actividad">
+            <input type="text" class="form-control" id="activity-description" placeholder="Describa la actividad">
         </div>
         <div class="form form-group m-2">
-          <label for="activityTime">Tiempo</label>
-          <input id="activityTime" type="time" class="form-control" id="Time set" placeholder="Tiempo de la actividad">
+          <label for="activityTime">Minutos para la actividad</label>
+          <input id="activity-duration" type="number" class="form-control"  placeholder="Tiempo de la actividad" min="0" max="60">
         </div>
         <button type="submit" class="btn btn-primary m-2">Iniciar Actividad</button>
     </form>

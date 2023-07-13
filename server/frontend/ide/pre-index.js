@@ -12,9 +12,9 @@ function showCurrentActivity(activity) {
   $("#class-assignment").html("");
   if (!activity) return;
   let card = $("<div>").addClass("card text-white bg-dark mb-3");
-  let header = $("<div>").addClass("card-header").text(activity.name);
+  let header = $("<div>").addClass("card-header").text("Actividad del Dia");
   let body = $("<div>").addClass("card-body");
-  let text = $("<p>").addClass("card-text").text("Aca el profesor va a escribir la actividad de hoy");
+  let text = $("<p>").addClass("card-text").text(activity.name);
   card.append(header);
   body.append(text);
   card.append(body);

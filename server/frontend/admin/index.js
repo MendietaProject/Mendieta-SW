@@ -31,8 +31,11 @@ function initActivityMaker() {
 
     // TODO(Richo): Load all the other fields as well!
     let activity = {
-      name: $("#activity-name").val()
+      name: $("#activity-name").val(),
+      details: $("#activity-description").val(),
+      duration: parseInt($("#activity-duration").val()) * 60 * 1000,
     };
+  
 
     Mendieta.createActivity(activity).then(initMainScreen)
   });
@@ -60,6 +63,7 @@ function initMainScreen(currentActivity) {
   $("#activity-selector").hide();
   $("#main-screen").show();
   document.getElementById("titulo-actividad").innerText = currentActivity.name;
+  document.getElementById("tiempo ")
   const table = $('#table_id').DataTable({
     // TODO(Richo): Get the data directly from the websocket and update table manually?
     ajax: {

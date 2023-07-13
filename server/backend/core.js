@@ -122,8 +122,9 @@ class Activity {
   testDuration = 60000 * 1.5; // TODO(Richo): Make it configurable!
   submissions = [];
 
-  constructor(name) {
+  constructor(name, duration) {
     this.name = name;
+    this.testDuration = duration;
   }
 
   addSubmission(submission) {

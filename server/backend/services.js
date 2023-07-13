@@ -132,7 +132,7 @@ function initActivityController(app, mendieta) {
         }
       } else {
         if(req.body.name){
-          mendieta.currentActivity = new Activity(req.body.name);
+          mendieta.currentActivity = new Activity(req.body.name, req.body.duration);
           res.send(mendieta.currentActivity);
         }else{
           res.sendStatus(400);
