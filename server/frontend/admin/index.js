@@ -28,12 +28,14 @@ function initActivityMaker() {
   // TODO(Richo): Disable form after submission (re-enable on complete) to prevent multiple submissions
   $("#create-activity-form").on("submit", function (e) {
     e.preventDefault();
-
+    let m = parseInt($("#activity-duration-minutes").val());
+    let s = parseInt($("#activity-duration-seconds").val());
+    let ms = ((m*60)+s)*1000;
     // TODO(Richo): Load all the other fields as well!
     let activity = {
       name: $("#activity-name").val(),
       details: $("#activity-description").val(),
-      duration: parseInt($("#activity-duration").val()) * 60 * 1000,
+      duration: ms,
     };
   
 
