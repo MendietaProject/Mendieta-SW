@@ -80,8 +80,7 @@ function initMainScreen(currentActivity) {
       {"defaultContent": ""},
       {"data" : "state"},
       {"data" : "author.name"},
-      {"data" : "program.src"},
-      {"defaultContent": "<button data-action='delete'>Cancelar</button>"}
+      {"defaultContent": "<button data-action='showProgram'>Abrir Programa</button> <button data-action='delete'>Cancelar</button>"}
     ],
     responsive: true,
     createdRow: (row, data, index) => {
@@ -105,6 +104,8 @@ function initMainScreen(currentActivity) {
           console.log("Succesfully canceled " + result);
           table.ajax.reload();
         });
+    } else if (action==="showProgram") {
+      alert(data.program.src);
     }
   });
 
