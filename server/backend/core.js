@@ -17,7 +17,8 @@ class Mendieta {
     return this.#currentActivity;
   }
   set currentActivity(activity) {
-    // TODO(Richo): When changing activity we must reset the current queue!
+    this.resetCurrentQueue();
+
     this.#currentActivity = activity;
     if (activity && !this.findActivity(activity.id)) {
       this.addActivity(activity);
@@ -28,6 +29,14 @@ class Mendieta {
   get submissions() {
     if (!this.#currentActivity) return [];
     return this.#currentActivity.submissions;
+  }
+
+  resetCurrentQueue() {
+    this.submissions.forEach(s => {
+      if (!s.isFinished()) {
+        this.cancelSubmission(s);
+      }
+    })
   }
 
   findActivity(id) {

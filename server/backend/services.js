@@ -114,6 +114,7 @@ function initActivityController(app, mendieta) {
       }
     }))
     .delete(handleError((req, res) => {
+      debugger;
       if (!mendieta.currentActivity){
         res.sendStatus(400);
       } else {
