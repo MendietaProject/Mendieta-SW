@@ -87,6 +87,7 @@ class Storage {
 class FakeStorage {
 
     activities = [];
+    submissions = {};
 
     getAllActivities() {
         return this.activities.map(activity => {
@@ -99,6 +100,18 @@ class FakeStorage {
     }
     storeActivity(activity) {
         this.activities.push(activity);
+        this.submissions[activity.id] = [];
+    }
+
+    getAllSubmissions(activityId) {
+        return this.submissions[activityId];
+    }
+    findSubmission(activityId, submissionId) {
+        var submission = this.submissions[activityId].find(submission => submission.id == submissionId);
+        return submission;
+    }
+    storeSubmission(activityId, submission) {
+        this.submissions[activityId].push(submission);
     }
 
 }

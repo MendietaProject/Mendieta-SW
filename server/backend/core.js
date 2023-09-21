@@ -36,8 +36,7 @@ class Mendieta {
 
   get submissions() {
     if (!this.#currentActivityId) return [];
-    // TODO(Richo): This should ask the storage!
-    return this.currentActivity.submissions;
+    return this.storage.getAllSubmissions(this.#currentActivityId);
   }
 
   resetCurrentQueue() {
@@ -80,14 +79,16 @@ class Mendieta {
   }
 
   findSubmission(id) {
-    // TODO(Richo): Throw if no current activity is set yet!
-    // TODO(Richo): Ask storage!!!
-    return this.currentActivity.findSubmission(id);
+    if (this.#currentActivityId == null) {
+      throw "No activity set yet!";
+    }
+    return this.storage.findSubmission(this.#currentActivityId, id);
   }
   addSubmission(submission) {
-    // TODO(Richo): Throw if no current activity is set yet!
-    // TODO(Richo): Ask storage!!!
-    this.currentActivity.addSubmission(submission);
+    if (this.#currentActivityId == null) {
+      throw "No activity set yet!";
+    }
+    this.storage.storeSubmission(this.#currentActivityId, submission);
     this.#currentQueue.put(submission);
     this.#activityUpdate();
   }
@@ -142,19 +143,11 @@ class Mendieta {
 class Activity {
   id = uuid();
   name;
-  testDuration = 60000 * 1.5; // TODO(Richo): Make it configurable!
-  submissions = [];
+  testDuration = 60000 * 1.5;
 
   constructor(name, duration) {
     this.name = name;
     this.testDuration = duration;
-  }
-
-  addSubmission(submission) {
-    this.submissions.push(submission);
-  }
-  findSubmission(id) {
-    return this.submissions.find(s => s.id == id);
   }
 }
 
