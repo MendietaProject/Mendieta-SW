@@ -24,13 +24,11 @@ function start (mendieta, port) {
 
 function handleError(fn) {
   return (req, res) => {
-    try {
-      fn(req, res);
-    } catch (err) {
+    fn(req, res).catch(err => {
       res.status(err.statusCode || 500);
       res.send(err);
       console.error(err);
-    }
+    });
   }
 }
 
@@ -49,12 +47,12 @@ function initUpdateStreamController(app, mendieta) {
     let client = {id: null, socket: ws};
     clients.push(client);
     console.log(`Se conectó un cliente! (# clientes: ${clients.length})`);
-    ws.onmessage = (msg) => {
+    ws.onmessage = async (msg) => {
       if (client.id) return;
       client.id = msg.data;
 
       try {
-        const submission = mendieta.submissions.find(s => s.isActive());
+        const submission = (await mendieta.getSubmissions()).find(s => s.isActive());
         if (submission && submission.author.id == client.id) {
           const msg = createUpdateMsg("submission-update", submission);
           client.socket.send(msg);
@@ -103,38 +101,41 @@ function initUpdateStreamController(app, mendieta) {
 function initActivityController(app, mendieta) {
 
   app.route("/activities")
-    .get(handleError((req, res) => res.send(mendieta.getAllActivities())));
+    .get(handleError(async (req, res) => res.send(await mendieta.getAllActivities())));
 
   app.route("/activities/current")
-    .get(handleError((req, res) => {
-      if (mendieta.currentActivity) {
-        res.send(mendieta.currentActivity);
+    .get(handleError(async (req, res) => {
+      var currentActivity = await mendieta.getCurrentActivity();
+      if (currentActivity != null) {
+        res.send(currentActivity);
       } else {
         res.sendStatus(404);
       }
     }))
-    .delete(handleError((req, res) => {
-      if (!mendieta.currentActivity){
+    .delete(handleError(async (req, res) => {
+      var currentActivity = await mendieta.getCurrentActivity();
+      if (currentActivity == null){
         res.sendStatus(400);
       } else {
-        mendieta.currentActivity = null;
+        await mendieta.setCurrentActivity(null);
         res.sendStatus(200);
       }
     }))
-    .post(handleError((req, res) => {
+    .post(handleError(async (req, res) => {
       if(req.body.id) {
-        var activity = mendieta.findActivity(req.body.id);
+        var activity = await mendieta.findActivity(req.body.id);
         if(activity) {
-          mendieta.currentActivity = activity;
+          await mendieta.setCurrentActivity(activity);
           res.send(activity);
         } else {
           res.sendStatus(404);
         }
       } else {
-        if(req.body.name){
-          mendieta.currentActivity = new Activity(req.body.name, req.body.duration);
-          res.send(mendieta.currentActivity);
-        }else{
+        if(req.body.name) {
+          var currentActivity = new Activity(req.body.name, req.body.duration);
+          await mendieta.setCurrentActivity(currentActivity);
+          res.send(currentActivity);
+        } else {
           res.sendStatus(400);
         }
       }
@@ -144,19 +145,19 @@ function initActivityController(app, mendieta) {
 function initSubmissionController(app, mendieta) {
 
   app.route('/submissions')
-    .get(handleError((_, res) => {
-      res.send(mendieta.submissions);
+    .get(handleError(async (_, res) => {
+      res.send(await mendieta.getSubmissions());
     }))
-    .post(handleError(({body: {author, program}}, res) => {
+    .post(handleError(async ({body: {author, program}}, res) => {
       let submission = new Submission(author, JSONX.parse(program));
-      mendieta.addSubmission(submission);
+      await mendieta.addSubmission(submission);
       res.send(submission);
     }));
 
 
   let withSubmission = fn => {
-    return ({params: {id}}, res) => {
-      let submission = mendieta.findSubmission(id);
+    return async ({params: {id}}, res) => {
+      let submission = await mendieta.findSubmission(id);
       if (submission) {
         fn(submission, res);
       } else {
@@ -198,10 +199,10 @@ function initSubmissionController(app, mendieta) {
 function initStudentController(app, mendieta) {
 
   app.route('/students')
-    .get(handleError((_, res) => {
+    .get(handleError(async (_, res) => {
       res.send(mendieta.students);
     }))
-    .post(handleError(({body: {id, name}}, res) => {
+    .post(handleError(async ({body: {id, name}}, res) => {
       let student = mendieta.registerStudent(id, name);
       res.send(student);
     }));

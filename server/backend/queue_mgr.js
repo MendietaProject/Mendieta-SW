@@ -20,7 +20,7 @@ async function start(mendieta, port) {
 }
 
 async function processSubmission(submission, mendieta) {
-  mendieta.activateSubmission(submission);
+  await mendieta.activateSubmission(submission);
 
   let submissionTimeout = timeout(submission.testDuration);
   while (!submission.isFinished()) {

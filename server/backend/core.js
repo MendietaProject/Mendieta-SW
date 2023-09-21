@@ -17,44 +17,44 @@ class Mendieta {
     this.storage = storage;
   }
 
-  get currentActivity() {
-    return this.findActivity(this.#currentActivityId);
+  async getCurrentActivity() {
+    return await this.findActivity(this.#currentActivityId);
   }
-  set currentActivity(activity) {
-    this.resetCurrentQueue();
+  async setCurrentActivity(activity) {
+    await this.resetCurrentQueue();
 
     if (activity == null) {
       this.#currentActivityId = null;
     } else {
       this.#currentActivityId = activity.id;
-      if (activity && !this.findActivity(activity.id)) {
-        this.addActivity(activity);
+      if (activity && !await this.findActivity(activity.id)) {
+        await this.addActivity(activity);
       }
     }
-    this.#activityUpdate();
+    await this.#activityUpdate();
   }
 
-  get submissions() {
+  async getSubmissions() {
     if (!this.#currentActivityId) return [];
-    return this.storage.getAllSubmissions(this.#currentActivityId);
+    return await this.storage.getAllSubmissions(this.#currentActivityId);
   }
 
-  resetCurrentQueue() {
-    this.submissions.forEach(s => {
+  async resetCurrentQueue() {
+    (await this.getSubmissions()).forEach(s => {
       if (!s.isFinished()) {
         this.cancelSubmission(s);
       }
     })
   }
 
-  getAllActivities() {
-    return this.storage.getAllActivities();
+  async getAllActivities() {
+    return await this.storage.getAllActivities();
   }
-  findActivity(id) {
-    return this.storage.findActivity(id);
+  async findActivity(id) {
+    return await this.storage.findActivity(id);
   }
-  addActivity(activity) {
-    this.storage.storeActivity(activity);
+  async addActivity(activity) {
+    await this.storage.storeActivity(activity);
   }
 
   findStudent(id) {
@@ -78,22 +78,23 @@ class Mendieta {
     this.students = this.students.filter(s => s != student);
   }
 
-  findSubmission(id) {
+  async findSubmission(id) {
     if (this.#currentActivityId == null) {
       throw "No activity set yet!";
     }
-    return this.storage.findSubmission(this.#currentActivityId, id);
+    return await this.storage.findSubmission(this.#currentActivityId, id);
   }
-  addSubmission(submission) {
+  async addSubmission(submission) {
     if (this.#currentActivityId == null) {
       throw "No activity set yet!";
     }
-    this.storage.storeSubmission(this.#currentActivityId, submission);
+    await this.storage.storeSubmission(this.#currentActivityId, submission);
     this.#currentQueue.put(submission);
-    this.#activityUpdate();
+    await this.#activityUpdate();
   }
-  activateSubmission(submission) {
-    const testDuration = this.currentActivity.testDuration;
+  async activateSubmission(submission) {
+    let currentActivity = await this.getCurrentActivity();
+    const testDuration = currentActivity.testDuration;
     this.#submissionUpdateIf(submission, s => s.activate(testDuration));
   }
   pauseSubmission(submission) {
@@ -121,8 +122,8 @@ class Mendieta {
     if (!observers) throw "Invalid update key!";
     observers.push(fn);
   }
-  #activityUpdate() {
-    this.#update("activity-update", this.currentActivity);
+  async #activityUpdate() {
+    this.#update("activity-update", await this.getCurrentActivity());
   }
   #submissionUpdateIf(submission, fn) {
     if (fn(submission)) {
