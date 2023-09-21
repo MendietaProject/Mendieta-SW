@@ -1,3 +1,5 @@
+const { Activity } = require('./core');
+
 const sqlite3 = require('sqlite3').verbose();
 
 class Storage {
@@ -116,8 +118,72 @@ class FakeStorage {
 
 }
 
+function ActivityFromRow(row) {
+    if (row == null) return null;
+    var result = new Activity(row.name, row.test_duration);
+    result.id = row.id;
+    // TODO(Richo): Description!!
+    return result;
+}
+
+class SqlStorage {
+    constructor() {
+        this.db = new sqlite3.Database('x.db', (err) => {
+            if (err) {
+                console.error('Error', err.message);
+            } else {
+                console.log('Conectado');
+            }
+        });
+    }
+    getAllActivities() {
+        return new Promise((resolve, reject) => {
+            this.db.all('SELECT * FROM activities', [], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows.map(ActivityFromRow));
+                }
+            });
+        });
+    }
+    async findActivity(id) {
+        if (id == null) return null;
+        return new Promise((resolve, reject) => {
+            this.db.get("SELECT * FROM activities WHERE id = ?", [id], (err, row) => {
+                if (err) { reject(err); }
+                else { resolve(ActivityFromRow(row)); }
+            })
+        });
+    }
+    storeActivity(activity) {
+        var id = activity.id;
+        var name = activity.name;
+        var duration = activity.testDuration;
+        return new Promise((resolve, reject) => {
+            this.db.run('INSERT INTO activities (id, name, test_duration) VALUES (?, ?, ?)', [id, name, duration], (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    async getAllSubmissions(activityId) {
+        return []
+    }
+    async findSubmission(activityId, submissionId) {
+        return null;
+    }
+    async storeSubmission(activityId, submission) {
+    }
+
+}
 
 module.exports = {
     FakeStorage: FakeStorage,
+    SqlStorage: SqlStorage
   };
   
