@@ -103,7 +103,7 @@ function initUpdateStreamController(app, mendieta) {
 function initActivityController(app, mendieta) {
 
   app.route("/activities")
-    .get(handleError((req, res) => res.send(mendieta.activities)));
+    .get(handleError((req, res) => res.send(mendieta.getAllActivities())));
 
   app.route("/activities/current")
     .get(handleError((req, res) => {
@@ -114,7 +114,6 @@ function initActivityController(app, mendieta) {
       }
     }))
     .delete(handleError((req, res) => {
-      debugger;
       if (!mendieta.currentActivity){
         res.sendStatus(400);
       } else {

@@ -3,32 +3,41 @@ const Queue = require("@richov/js-async-queue");
 
 class Mendieta {
   #currentQueue = new Queue();
-  #currentActivity = null;
+  #currentActivityId = null;
   #observers = {
     "activity-update": [],
     "submission-update": [],
   };
 
-  // TODO(Richo): These should probably be handled by the storage
-  activities = [];
+
+  storage = null;
   students = [];
 
+  constructor(storage) {
+    this.storage = storage;
+  }
+
   get currentActivity() {
-    return this.#currentActivity;
+    return this.findActivity(this.#currentActivityId);
   }
   set currentActivity(activity) {
     this.resetCurrentQueue();
 
-    this.#currentActivity = activity;
-    if (activity && !this.findActivity(activity.id)) {
-      this.addActivity(activity);
+    if (activity == null) {
+      this.#currentActivityId = null;
+    } else {
+      this.#currentActivityId = activity.id;
+      if (activity && !this.findActivity(activity.id)) {
+        this.addActivity(activity);
+      }
     }
     this.#activityUpdate();
   }
 
   get submissions() {
-    if (!this.#currentActivity) return [];
-    return this.#currentActivity.submissions;
+    if (!this.#currentActivityId) return [];
+    // TODO(Richo): This should ask the storage!
+    return this.currentActivity.submissions;
   }
 
   resetCurrentQueue() {
@@ -39,11 +48,14 @@ class Mendieta {
     })
   }
 
+  getAllActivities() {
+    return this.storage.getAllActivities();
+  }
   findActivity(id) {
-    return this.activities.find(activity => activity.id == id);
+    return this.storage.findActivity(id);
   }
   addActivity(activity) {
-    this.activities.push(activity);
+    this.storage.storeActivity(activity);
   }
 
   findStudent(id) {
@@ -69,16 +81,18 @@ class Mendieta {
 
   findSubmission(id) {
     // TODO(Richo): Throw if no current activity is set yet!
-    return this.#currentActivity.findSubmission(id);
+    // TODO(Richo): Ask storage!!!
+    return this.currentActivity.findSubmission(id);
   }
   addSubmission(submission) {
     // TODO(Richo): Throw if no current activity is set yet!
-    this.#currentActivity.addSubmission(submission);
+    // TODO(Richo): Ask storage!!!
+    this.currentActivity.addSubmission(submission);
     this.#currentQueue.put(submission);
     this.#activityUpdate();
   }
   activateSubmission(submission) {
-    const testDuration = this.#currentActivity.testDuration;
+    const testDuration = this.currentActivity.testDuration;
     this.#submissionUpdateIf(submission, s => s.activate(testDuration));
   }
   pauseSubmission(submission) {
@@ -107,7 +121,7 @@ class Mendieta {
     observers.push(fn);
   }
   #activityUpdate() {
-    this.#update("activity-update", this.#currentActivity);
+    this.#update("activity-update", this.currentActivity);
   }
   #submissionUpdateIf(submission, fn) {
     if (fn(submission)) {

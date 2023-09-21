@@ -83,7 +83,28 @@ class Storage {
     }
 }
 
-const storage = new Storage();
 
-storage.new_student();
+class FakeStorage {
 
+    activities = [];
+
+    getAllActivities() {
+        return this.activities.map(activity => {
+            return {id: activity.id, name: activity.name};
+        });
+    }
+    findActivity(id) {
+        if (id == null) return null;
+        return this.activities.find(activity => activity.id == id);
+    }
+    storeActivity(activity) {
+        this.activities.push(activity);
+    }
+
+}
+
+
+module.exports = {
+    FakeStorage: FakeStorage,
+  };
+  
