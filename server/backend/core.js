@@ -11,7 +11,7 @@ class Mendieta {
 
 
   storage = null;
-  students = [];
+  students = []; // TODO(Richo): Figure out what to do with storage!
 
   constructor(storage) {
     this.storage = storage;
