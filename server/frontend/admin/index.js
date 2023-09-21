@@ -34,6 +34,7 @@ function initActivityMaker() {
     if (isNaN(m)) m = 0; 
     if (isNaN(s)) s = 0;
     let ms = ((m*60)+s)*1000;
+    if (ms <= 0) ms = 60000 * 1.5;
 
     let activity = {
       name: $("#activity-name").val(),
