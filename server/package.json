@@ -23,6 +23,7 @@
     "express": "^4.17.1",
     "express-ws": "^5.0.2",
     "serialport": "^9.2.1",
+    "sqlite3": "^5.1.6",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
