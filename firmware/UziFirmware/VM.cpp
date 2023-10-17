@@ -104,7 +104,7 @@ void VM::executeCoroutine(Coroutine* coroutine, GPIO* io, Monitor* monitor)
 		}
 		if (pc > currentScript->getInstructionStop())
 		{
-			if (currentScript->once) 
+			if (currentScript->type == TASK) 
 			{
 				currentScript->setRunning(false);
 			}
@@ -112,11 +112,7 @@ void VM::executeCoroutine(Coroutine* coroutine, GPIO* io, Monitor* monitor)
 			bool returnFromScriptCall = framePointer != 0;
 			unwindStackAndReturn();
 
-			if (returnFromScriptCall)
-			{
-				currentScript = currentProgram->getScriptForPC(pc);
-			}
-			else
+			if (!returnFromScriptCall)
 			{
 				/*
 				INFO(Richo):
@@ -206,7 +202,7 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		{
 			stack_push(currentProgram->getGlobal(currentScript->getLocal(i)), error);
 		}
-		stack_push(uint32_to_float((uint32)framePointer << 16 | pc), error);
+		stack_push(uint32_to_float((uint32)framePointer << 16 | (pc - 1)), error);
 
 		/*
 		INFO(Richo):
@@ -353,6 +349,7 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	}
 	break;
 
+	/*
 	case JNE:
 	{
 		float a = stack_pop(error);
@@ -364,7 +361,9 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		}
 	}
 	break;
+	*/
 
+	/*
 	case JLT:
 	{
 		float b = stack_pop(error);
@@ -376,6 +375,7 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		}
 	}
 	break;
+	*/
 
 	case JLTE:
 	{
@@ -389,6 +389,7 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	}
 	break;
 
+	/*
 	case JGT:
 	{
 		float b = stack_pop(error);
@@ -400,12 +401,60 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		}
 	}
 	break;
+	*/
 
+	/*
 	case JGTE:
 	{
 		float b = stack_pop(error);
 		float a = stack_pop(error);
 		if (a >= b)
+		{
+			pc += argument;
+			handleBackwardJump(argument, yieldFlag);
+		}
+	}
+	break;
+	*/
+
+	case PRIM_JMP:
+	{
+		int16 argument = (int16)stack_pop(error);
+		pc += argument;
+		handleBackwardJump(argument, yieldFlag);
+	}
+	break;
+
+	case PRIM_JZ:
+	{
+		int16 argument = (int16)stack_pop(error);
+		float value = stack_pop(error);
+		if (value == 0) // TODO(Richo): Float comparison
+		{
+			pc += argument;
+			handleBackwardJump(argument, yieldFlag);
+		}
+	}
+	break;
+
+	case PRIM_JNZ:
+	{
+		int16 argument = (int16)stack_pop(error);
+		float value = stack_pop(error);
+		if (value != 0) // TODO(Richo): Float comparison
+		{
+			pc += argument;
+			handleBackwardJump(argument, yieldFlag);
+		}
+	}
+	break;
+
+	case PRIM_JLTE:
+	{
+		int16 argument = (int16)stack_pop(error);
+		float b = stack_pop(error);
+		float a = stack_pop(error);
+		if (a <= b)
 		{
 			pc += argument;
 			handleBackwardJump(argument, yieldFlag);
@@ -441,32 +490,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		float value = stack_pop(error);
 		uint8 pin = (uint8)stack_pop(error);
 		io->setValue(pin, value);
-	}
-	break;
-
-	case PRIM_TOGGLE_PIN:
-	{
-		// TODO(Richo): What happens if we pop a value that exceeds the uint8 range (or is negative)?
-		uint8 pin = (uint8)stack_pop(error);
-		io->setMode(pin, OUTPUT);
-		io->setValue(pin, 1 - io->getValue(pin));
-	}
-	break;
-
-	case PRIM_GET_SERVO_DEGREES:
-	{
-		uint8 pin = (uint8)stack_pop(error);
-		float value = io->getValue(pin);
-		float degrees = value * 180.0f;
-		stack_push(degrees, error);
-	}
-	break;
-
-	case PRIM_SET_SERVO_DEGREES:
-	{
-		float value = stack_pop(error) / 180.0f;
-		uint8 pin = (uint8)stack_pop(error);
-		io->servoWrite(pin, value);
 	}
 	break;
 
@@ -507,20 +530,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		float val2 = stack_pop(error);
 		float val1 = stack_pop(error);
 		stack_push(val1 - val2, error);
-	}
-	break;
-
-	case PRIM_SECONDS:
-	{
-		float time = (float)millis() / 1000.0f;
-		stack_push(time, error);
-	}
-	break;
-
-	case PRIM_MINUTES:
-	{
-		float time = (float)millis() / 1000.0f / 60.0f;
-		stack_push(time, error);
 	}
 	break;
 
@@ -600,20 +609,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	}
 	break;
 
-	case PRIM_TURN_ON:
-	{
-		uint8 pin = (uint8)stack_pop(error);
-		io->setValue(pin, 1);
-	}
-	break;
-
-	case PRIM_TURN_OFF:
-	{
-		uint8 pin = (uint8)stack_pop(error);
-		io->setValue(pin, 0);
-	}
-	break;
-
 	case PRIM_YIELD:
 	{
 		yieldTime(0, yieldFlag);
@@ -623,22 +618,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	case PRIM_DELAY_MILLIS:
 	{
 		int32 time = (int32)stack_pop(error);
-		yieldTime(time, yieldFlag);
-	}
-	break;
-
-	case PRIM_DELAY_SECONDS:
-	{
-		float seconds = stack_pop(error);
-		int32 time = (int32)(seconds * 1000);
-		yieldTime(time, yieldFlag);
-	}
-	break;
-
-	case PRIM_DELAY_MINUTES:
-	{
-		float minutes = stack_pop(error);
-		int32 time = (int32)(minutes * 60 * 1000);
 		yieldTime(time, yieldFlag);
 	}
 	break;
@@ -656,7 +635,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		if (returnFromScriptCall)
 		{
 			unwindStackAndReturn();
-			currentScript = currentProgram->getScriptForPC(pc);
 		}
 		else
 		{
@@ -689,7 +667,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		if (returnFromScriptCall)
 		{
 			unwindStackAndReturn();
-			currentScript = currentProgram->getScriptForPC(pc);
 		}
 		else
 		{
@@ -849,20 +826,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	}
 	break;
 
-	case PRIM_IS_ON:
-	{
-		uint8 pin = (uint8)stack_pop(error);
-		stack_push(io->getValue(pin) > 0, error);
-	}
-	break;
-
-	case PRIM_IS_OFF:
-	{
-		uint8 pin = (uint8)stack_pop(error);
-		stack_push(io->getValue(pin) == 0, error);
-	}
-	break;
-
 	case PRIM_REMAINDER:
 	{
 		float b = stack_pop(error);
@@ -871,34 +834,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	}
 	break;
 
-	case PRIM_MOD:
-	{
-		float n = stack_pop(error);
-		float a = stack_pop(error);
-		double result = a - (floor(a / n) * n);
-		stack_push((float)result, error);
-	}
-	break;
-
-	case PRIM_CONSTRAIN:
-	{
-		float c = stack_pop(error);
-		float b = stack_pop(error);
-		float a = stack_pop(error);
-		if (a < b)
-		{
-			stack_push(b, error);
-		}
-		else if (a > c)
-		{
-			stack_push(c, error);
-		}
-		else
-		{
-			stack_push(a, error);
-		}
-	}
-	break;
 
 	case PRIM_RANDOM_INT:
 	{
@@ -925,105 +860,6 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 		stack_push(r2, error);
 	}
 	break;
-
-	case PRIM_IS_EVEN:
-	{
-		int32 a = (int32)stack_pop(error);
-		stack_push(a % 2 == 0 ? 1.0f : 0.0f, error);
-	}
-	break;
-
-	case PRIM_IS_ODD:
-	{
-		int32 a = (int32)stack_pop(error);
-		stack_push(a % 2 == 0 ? 0.0f : 1.0f, error);
-	}
-	break;
-
-	case PRIM_IS_PRIME:
-	{
-		int32 a = (int32)stack_pop(error);
-		if (a <= 1) { stack_push(0, error); }
-		else if (a % 2 == 0) { stack_push(a == 2 ? 1.0f : 0.0f, error); }
-		else
-		{
-			bool result = true;
-			for (int32 i = 3; i <= sqrt(a); i += 2)
-			{
-				if (a % i == 0)
-				{
-					result = false;
-					break;
-				}
-			}
-			stack_push(result ? 1.0f : 0.0f, error);
-		}
-	}
-	break;
-
-	case PRIM_IS_WHOLE:
-	{
-		float a = stack_pop(error);
-		int32 a_int = (int32)a;
-		stack_push(a == a_int ? 1.0f : 0.0f, error);
-	}
-	break;
-
-	case PRIM_IS_POSITIVE:
-	{
-		float a = stack_pop(error);
-		stack_push(a >= 0 ? 1.0f : 0.0f, error);
-	}
-	break;
-
-	case PRIM_IS_NEGATIVE:
-	{
-		float a = stack_pop(error);
-		stack_push(a < 0 ? 1.0f : 0.0f, error);
-	}
-	break;
-
-	case PRIM_IS_DIVISIBLE_BY:
-	{
-		float b = stack_pop(error);
-		float a = stack_pop(error);
-		if (b == 0) { stack_push(0, error); }
-		else if (b != (int32)b) { stack_push(0, error); }
-		else
-		{
-			stack_push(fmod(a, b) == 0 ? 1.0f : 0.0f, error);
-		}
-	}
-	break;
-
-	case PRIM_IS_CLOSE_TO:
-	{
-		float epsilon = 0.0001f;
-		float b = stack_pop(error);
-		float a = stack_pop(error);
-		if (a == 0)
-		{
-			stack_push(b < epsilon ? 1.0f : 0.0f, error);
-		}
-		else if (b == 0)
-		{
-			stack_push(a < epsilon ? 1.0f : 0.0f, error);
-		}
-		else if (a == b)
-		{
-			stack_push(1, error);
-		}
-		else
-		{
-			float a_abs = (float)fabs(a);
-			float b_abs = (float)fabs(b);
-			float max = a_abs > b_abs ? a_abs : b_abs;
-			float diff = (float)fabs(a - b);
-			stack_push(diff / max < epsilon ? 1.0f : 0.0f, error);
-		}
-	}
-	break;
-
 	case PRIM_SONAR_DIST_CM:
 	{
 		uint16 maxDist = (uint16)stack_pop(error);
@@ -1150,15 +986,59 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	case PRIM_LCD_PRINT_VALUE:
 	{
 		float value = stack_pop(error);
-		uint8 line = (uint8)stack_pop(error);
 		uint32 pointer = (uint32)stack_pop(error);
 		if (pointer > 0) 
 		{
 			LiquidCrystal_I2C* lcd = (LiquidCrystal_I2C*)uzi_pointer(pointer, error);
 			if (error == NO_ERROR)
 			{
-				lcd->setCursor(0, line);
 				lcd->print(value);
+			}
+		}
+	}
+	break;
+
+	case PRIM_LCD_PRINT_STRING:
+	{
+		uint32 value_pointer = stack_pop(error);
+		char* value = currentProgram->strings + value_pointer;
+		uint32 pointer = (uint32)stack_pop(error);
+		if (pointer > 0)
+		{
+			LiquidCrystal_I2C* lcd = (LiquidCrystal_I2C*)uzi_pointer(pointer, error);
+			if (error == NO_ERROR)
+			{
+				lcd->print(value);
+			}
+		}
+	}
+	break;
+
+	case PRIM_LCD_CLEAR:
+	{
+		uint32 pointer = (uint32)stack_pop(error);
+		if (pointer > 0)
+		{
+			LiquidCrystal_I2C* lcd = (LiquidCrystal_I2C*)uzi_pointer(pointer, error);
+			if (error == NO_ERROR)
+			{
+				lcd->clear();
+			}
+		}
+	}
+	break;
+
+	case PRIM_LCD_SET_CURSOR:
+	{
+		uint32 column = (uint32)stack_pop(error);
+		uint32 row = (uint32)stack_pop(error);
+		uint32 pointer = (uint32)stack_pop(error);
+		if (pointer > 0)
+		{
+			LiquidCrystal_I2C* lcd = (LiquidCrystal_I2C*)uzi_pointer(pointer, error);
+			if (error == NO_ERROR)
+			{
+				lcd->setCursor(row, column);
 			}
 		}
 	}
@@ -1225,129 +1105,12 @@ void VM::executeInstruction(Instruction instruction, GPIO* io, Monitor* monitor,
 	}
 	break;
 
-	case PRIM_ARRAY_CLEAR:
+
+	case PRIM_STRING_LENGTH:
 	{
-		uint32 pointer = (uint32)stack_pop(error);
-
-		if (pointer > 0)
-		{
-			float* array = (float*)uzi_pointer(pointer, error);
-			if (error == NO_ERROR)
-			{
-				int32 size = (float)array[0];
-				// TODO(Richo): Use memset instead of a for loop
-				for (int i = 0; i < size; i++)
-				{
-					array[i + 1] = 0;
-				}
-			}
-		}
-	}
-	break;
-
-	case PRIM_ARRAY_SUM:
-	{
-		int32 limit = (int32)stack_pop(error);
-		uint32 pointer = (uint32)stack_pop(error);
-
-		float result = 0;
-		if (pointer > 0)
-		{
-			float* array = (float*)uzi_pointer(pointer, error);
-			if (error == NO_ERROR)
-			{
-				int32 size = (float)array[0];
-				if (limit > size) { limit = size; }
-				
-				for (int i = 0; i < limit; i++)
-				{
-					result += array[i + 1];
-				}
-			}
-		}
-		stack_push(result, error);
-	}
-	break;
-
-	case PRIM_ARRAY_AVG:
-	{
-		int32 limit = (int32)stack_pop(error);
-		uint32 pointer = (uint32)stack_pop(error);
-
-		float result = 0;
-		if (pointer > 0)
-		{
-			float* array = (float*)uzi_pointer(pointer, error);
-			if (error == NO_ERROR)
-			{
-				int32 size = (float)array[0];
-				if (limit > size) { limit = size; }
-
-				for (int i = 0; i < limit; i++)
-				{
-					result += array[i + 1];
-				}
-				result /= limit;
-			}
-		}
-		stack_push(result, error);
-	}
-	break;
-
-	case PRIM_ARRAY_MAX:
-	{
-		int32 limit = (int32)stack_pop(error);
-		uint32 pointer = (uint32)stack_pop(error);
-
-		float result = 0;
-		if (pointer > 0 && limit > 0)
-		{
-			float* array = (float*)uzi_pointer(pointer, error);
-			if (error == NO_ERROR)
-			{
-				int32 size = (float)array[0];
-				if (limit > size) { limit = size; }
-
-				float max = array[1];
-				for (int i = 1; i < limit; i++)
-				{
-					if (array[i + 1] > max) 
-					{
-						max = array[i + 1];
-					}
-				}
-				result = max;
-			}
-		}
-		stack_push(result, error);
-	}
-	break;
-
-	case PRIM_ARRAY_MIN:
-	{
-		int32 limit = (int32)stack_pop(error);
-		uint32 pointer = (uint32)stack_pop(error);
-
-		float result = 0;
-		if (pointer > 0 && limit > 0)
-		{
-			float* array = (float*)uzi_pointer(pointer, error);
-			if (error == NO_ERROR)
-			{
-				int32 size = (float)array[0];
-				if (limit > size) { limit = size; }
-
-				float min = array[1];
-				for (int i = 1; i < limit; i++)
-				{
-					if (array[i + 1] < min)
-					{
-						min = array[i + 1];
-					}
-				}
-				result = min;
-			}
-		}
+		uint32 value_pointer = stack_pop(error);
+		char* value = currentProgram->strings + value_pointer;
+		int result = strlen(value);
 		stack_push(result, error);
 	}
 	break;
@@ -1380,15 +1143,38 @@ void VM::unwindStackAndReturn(void)
 	pc = value & 0xFFFF;
 	framePointer = value >> 16;
 
-	// INFO(Richo): Pop args/locals
+	// NOTE(Richo): Pop args/locals
 	int varCount = currentScript->getArgCount() + currentScript->getLocalCount();
 	stack_discard(varCount, error);
 
-
-	// INFO(Richo): Only push a return value if we were called from another script
-	if (returnFromScriptCall)
+	// NOTE(Richo): Only push a return value if we were called from another script
+	if (returnFromScriptCall && currentScript->type == FUNC)
 	{
 		stack_push(returnValue, error);
+	}
+
+	// NOTE(Richo): Set current script and increment pc
+	Script* script = currentProgram->getScriptForPC(pc);
+	
+	// HACK(Richo): I don't like this, there shouldn't be any reason for not finding a script if the pc was valid.
+	// I had to add this here because of a test that requires that a program with a single empty task doesn't break
+	// the VM. However, it doesn't feel right. Maybe I should just change the dead code remover to ensure empty tasks
+	// are removed. That's probably the better solution...
+	if (script)
+	{
+		currentScript = script;
+	}
+
+	// HACK(Richo): I *REALLY* don't like this. I had to change the meaning of the pc we push to the stack to be the
+	// previous instruction (usually a SCRIPT_CALL) because if we kept pushing the next instruction we could arrive
+	// after the end of the calling script and we would be in trouble. This situation couldn't happen before because 
+	// script calls were never the last instruction on a script, if they were in a statement position then the compiler
+	// used to emit a "pop" so we were safe. However, now that is no longer the case and we have this issue. I would 
+	// like to always push the previous pc but if the framePointer == -1 it means we're starting executing this script
+	// so, as a special case, we push the first pc of the script (thus, we can't increment it or we would be off by 1).
+	if (framePointer != -1) 
+	{
+		pc++;
 	}
 }
 
