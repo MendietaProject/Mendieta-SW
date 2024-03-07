@@ -22,7 +22,7 @@
     "@richov/js-async-queue": "^1.0.0",
     "express": "^4.17.1",
     "express-ws": "^5.0.2",
-    "serialport": "^9.2.1",
+    "serialport": "^9.2.8",
     "sqlite3": "^5.1.6",
     "uuid": "^8.3.2"
   },
