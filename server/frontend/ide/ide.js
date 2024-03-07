@@ -1,11 +1,9 @@
-const electron = require('electron');
-const { dialog } = electron ? electron.remote : {};
-const fs = require('fs');
+let IDE = (function () {
+  const electron = require('electron');
+  const { dialog } = electron ? electron.remote : {};
+  const fs = require('fs');
 
-﻿let IDE = (function () {
-
-  let codeEditor;
-  let selectedPort = "automatic";
+  let selectedPort = DEMO ? "simulator" : "automatic";
   let autorunInterval, autorunNextTime, autorunCounter = 0;
   let dirtyBlocks, dirtyCode;
   let lastProgram = { code: "", type: "uzi" };
@@ -19,10 +17,11 @@ const fs = require('fs');
   let IDE = {
     init: function () {
       // NOTE(Richo): The following tasks need to be done in order:
-      initializeLayout()
+      return initializeLayout()
         .then(initializeCodePanel)
         .then(initializeBlocksPanel)
         .then(initializeBlocklyMotorsModal)
+        .then(initializeBlocklyLcdsModal)
         .then(initializeBlocklySonarsModal)
         .then(initializeBlocklyJoysticksModal)
         .then(initializeBlocklyVariablesModal)
@@ -32,6 +31,7 @@ const fs = require('fs');
         .then(initializeInspectorPanel)
         .then(initializeOutputPanel)
         .then(initializePlotterPanel)
+        .then(initializeDebuggerPanel)
         .then(initializeBrokenLayoutErrorModal)
         .then(initializeServerNotFoundErrorModal)
         .then(initializeOptionsModal)
@@ -45,7 +45,7 @@ const fs = require('fs');
   }
 
   function initializeLayout() {
-    return LayoutManager.init(function () {
+    return LayoutManager.init(() => {
       resizePanels();
       saveToLocalStorage();
       checkBrokenLayout();
@@ -59,10 +59,13 @@ const fs = require('fs');
 
   function initializeBlocksPanel() {
     return UziBlock.init()
-      .then(function () {
+      .then(() => {
         let lastProgram = undefined;
 
-        UziBlock.on("change", function (userInteraction) {
+        UziBlock.on("select", block => {
+          UziCode.select(Uzi.state.program["block->token"][block]); 
+        });
+        UziBlock.on("change", userInteraction => {
           saveToLocalStorage();
 
           /*
@@ -70,7 +73,7 @@ const fs = require('fs');
           the user. This prevents a double compilation when changing the program
           from the code editor.
           */
-          if (userInteraction) {
+          if (userInteraction && !UziCode.isFocused()) {
             let currentProgram = getBlocklyCode();
             if (currentProgram !== lastProgram) {
               lastProgram = currentProgram;
@@ -83,13 +86,26 @@ const fs = require('fs');
           }
         });
 
-        // TODO(Richo)
-        Uzi.on("update", function (state, previousState) {
+        Debugger.on("change", (state, stackFrameIndex) => {
+          /*
+          HACK(Richo): FUCKING Blockly! I wasted a lot of time debugging this problem in which
+          a debugger update from the server wasn't being applied to the block editor (a breakpoint
+          was removed but the block still had the warning text set). By trial and error I discover
+          that, for some reason, while I'm dragging a block (a different block, completely unrelated
+          with the one misbehaving) the warning texts are not applied. I don't know why setting a
+          timeout to execute the update fixes the issue, though. But it seems it does so I will
+          keep this. Again, fucking Blockly...
+          */
+          setTimeout(UziBlock.handleDebuggerUpdate(state, stackFrameIndex), 0);
+        });
+        Uzi.on("update", (state, previousState, keys) => {
           if (state.program.type == "json") return; // Ignore blockly programs
           if (state.program.src == previousState.program.src) return;
-          let blocklyProgram = ASTToBlocks.generate(state.program.ast);
+          
+          let topBlocksPositions = UziBlock.getTopBlocksPositions();
+          let blocklyProgram = ASTToBlocks.generate(state.program);
           UziBlock.setProgram(blocklyProgram);
-          UziBlock.cleanUp();
+          UziBlock.setTopBlocksPositions(topBlocksPositions);
         });
       })
       .then(restoreFromLocalStorage);
@@ -114,6 +130,7 @@ const fs = require('fs');
       $("#download-button").show();
     }
     $("#submit-button").on("click", submitProject);
+    $("#new-button").on("click", newProject);
     $("#open-button").on("click", openProject);
     $("#save-button").on("click", saveProject);
     $("#save-as-button").on("click", saveAsProject);
@@ -124,11 +141,22 @@ const fs = require('fs');
     $("#port-dropdown").change(choosePort);
     $("#connect-button").on("click", connect);
     $("#disconnect-button").on("click", disconnect);
+    if (Uzi.state.features["interactivity?"]) {
+      $("#connect-button").show();  
+    } else {
+      $("#connect-button").hide();
+    }
+
     $("#verify-button").on("click", verify);
     $("#run-button").on("click", run);
     $("#install-button").on("click", install);
-		$("#interactive-checkbox").on("change", toggleInteractive);
+		// $("#interactive-checkbox").on("change", toggleInteractive);
     $("#options-button").on("click", openOptionsDialog);
+    if (Uzi.state.features["options-button?"]) {
+      $("#options-button").show();
+    } else {
+      $("#options-button").hide();
+    }
     Uzi.on("update", updateTopBar);
     Uzi.on("update", updateConnection);
     updatePortDropdown();
@@ -137,7 +165,8 @@ const fs = require('fs');
   function initializeInspectorPanel() {
     $("#pin-choose-button").on("click", openInspectorPinDialog);
     $("#global-choose-button").on("click", openInspectorGlobalDialog);
-    Uzi.on("update", updateInspectorPanel);
+    let editing = new Set();
+    Uzi.on("update", () => updateInspectorPanel(editing));
   }
 
   function initializeBlocklyMotorsModal() {
@@ -149,7 +178,7 @@ const fs = require('fs');
       return new Set(program.ast.imports.map(imp => imp.alias));
     }
 
-    UziBlock.getWorkspace().registerButtonCallback("configureDCMotors", function () {
+    UziBlock.getWorkspace().registerButtonCallback("configureDCMotors", () => {
       let motors = UziBlock.getMotors();
       let usedMotors = getUsedMotors();
       let spec = {
@@ -168,11 +197,52 @@ const fs = require('fs');
           return clone;
         })
       };
+      Uzi.elog("BLOCKLY/MODAL_OPEN", {type: "motors"});
       BlocklyModal.show(spec).then(data => {
+        Uzi.elog("BLOCKLY/MODAL_CLOSE", {type: "motors", data: data});
         UziBlock.setMotors(data);
         UziBlock.refreshToolbox();
         saveToLocalStorage();
         scheduleAutorun(true, "MOTOR UPDATE!");
+      });
+    });
+  }
+
+  function initializeBlocklyLcdsModal() {
+
+    function getUsedLcds() {
+      let program = Uzi.state.program;
+      if (program == null) return new Set();
+      // HACK(Richo): We are actually returning all the aliases, not just motors
+      return new Set(program.ast.imports.map(imp => imp.alias));
+    }
+
+    UziBlock.getWorkspace().registerButtonCallback("configureLCD", () => {
+      let lcds = UziBlock.getLcds();
+      let usedLcds = getUsedLcds();
+      let spec = {
+        title: i18n.translate("Configure LCD"),
+        cantRemoveMsg: i18n.translate("This LCD is being used by the program!"),
+        defaultElement: { name: "lcd", address: 63, cols: 16, rows: 2 },
+        columns: [
+          {id: "name", type: "identifier", name: i18n.translate("LCD name")},
+          {id: "address", type: "number", name: i18n.translate("Address")},
+          {id: "cols", type: "number", name: i18n.translate("Columns")},
+          {id: "rows", type: "number", name: i18n.translate("Rows")},
+        ],
+        rows: lcds.map(each => {
+          let clone = deepClone(each);
+          clone.removable = !usedLcds.has(each.name);
+          return clone;
+        })
+      };
+      Uzi.elog("BLOCKLY/MODAL_OPEN", {type: "lcds"});
+      BlocklyModal.show(spec).then(data => {
+        Uzi.elog("BLOCKLY/MODAL_CLOSE", {type: "lcds", data: data});
+        UziBlock.setLcds(data);
+        UziBlock.refreshToolbox();
+        saveToLocalStorage();
+        scheduleAutorun(true, "LCD UPDATE!");
       });
     });
   }
@@ -186,7 +256,7 @@ const fs = require('fs');
       return new Set(program.ast.imports.map(imp => imp.alias));
     }
 
-    UziBlock.getWorkspace().registerButtonCallback("configureSonars", function () {
+    UziBlock.getWorkspace().registerButtonCallback("configureSonars", () => {
       let sonars = UziBlock.getSonars();
       let usedSonars = getUsedSonars();
       let spec = {
@@ -205,7 +275,9 @@ const fs = require('fs');
           return clone;
         })
       };
+      Uzi.elog("BLOCKLY/MODAL_OPEN", {type: "sonars"});
       BlocklyModal.show(spec).then(data => {
+        Uzi.elog("BLOCKLY/MODAL_CLOSE", {type: "sonars", data: data});
         UziBlock.setSonars(data);
         UziBlock.refreshToolbox();
         saveToLocalStorage();
@@ -223,7 +295,7 @@ const fs = require('fs');
       return new Set(program.ast.imports.map(imp => imp.alias));
     }
 
-    UziBlock.getWorkspace().registerButtonCallback("configureJoysticks", function () {
+    UziBlock.getWorkspace().registerButtonCallback("configureJoysticks", () => {
       let joysticks = UziBlock.getJoysticks();
       let usedJoysticks = getUsedJoysticks();
       let spec = {
@@ -241,7 +313,9 @@ const fs = require('fs');
           return clone;
         })
       };
+      Uzi.elog("BLOCKLY/MODAL_OPEN", {type: "joysticks"});
       BlocklyModal.show(spec).then(data => {
+        Uzi.elog("BLOCKLY/MODAL_CLOSE", {type: "joysticks", data: data});
         UziBlock.setJoysticks(data);
         UziBlock.refreshToolbox();
         saveToLocalStorage();
@@ -251,7 +325,7 @@ const fs = require('fs');
   }
 
   function initializeBlocklyVariablesModal() {
-    UziBlock.getWorkspace().registerButtonCallback("configureVariables", function () {
+    UziBlock.getWorkspace().registerButtonCallback("configureVariables", () => {
       let variables = UziBlock.getVariables();
       let usedVariables = UziBlock.getUsedVariables();
       let spec = {
@@ -260,7 +334,7 @@ const fs = require('fs');
         defaultElement: {name: "variable", value: "0"},
         columns: [
           {id: "name", type: "identifier", name: i18n.translate("Variable name")},
-          {id: "value", type: "number", name: i18n.translate("Initial value (if global)")},
+          {id: "value", type: "numberOrPin", name: i18n.translate("Initial value (if global)")},
         ],
         rows: variables.map(each => {
           let clone = deepClone(each);
@@ -268,7 +342,9 @@ const fs = require('fs');
           return clone;
         })
       };
+      Uzi.elog("BLOCKLY/MODAL_OPEN", {type: "variables"});
       BlocklyModal.show(spec).then(data => {
+        Uzi.elog("BLOCKLY/MODAL_CLOSE", {type: "variables", data: data});
         UziBlock.setVariables(data);
         UziBlock.refreshToolbox();
         saveToLocalStorage();
@@ -286,7 +362,7 @@ const fs = require('fs');
       return new Set(program.ast.imports.map(imp => imp.alias));
     }
 
-    UziBlock.getWorkspace().registerButtonCallback("configureLists", function () {
+    UziBlock.getWorkspace().registerButtonCallback("configureLists", () => {
       let lists = UziBlock.getLists();
       let usedLists = getUsedLists();
       let spec = {
@@ -303,7 +379,9 @@ const fs = require('fs');
           return clone;
         })
       };
+      Uzi.elog("BLOCKLY/MODAL_OPEN", {type: "lists"});
       BlocklyModal.show(spec).then(data => {
+        Uzi.elog("BLOCKLY/MODAL_CLOSE", {type: "lists", data: data});
         UziBlock.setLists(data);
         UziBlock.refreshToolbox();
         saveToLocalStorage();
@@ -313,45 +391,28 @@ const fs = require('fs');
   }
 
   function initializeCodePanel() {
-		codeEditor = ace.edit("code-editor");
-		codeEditor.setTheme("ace/theme/ambiance");
-		codeEditor.getSession().setMode("ace/mode/uzi");
-
-    let focus = false;
-    codeEditor.on("focus", function () { focus = true; });
-    codeEditor.on("blur", function () { focus = false; });
-    codeEditor.on("change", function () {
+    UziCode.init();
+    UziCode.on("cursor", idx => {
+      UziBlock.selectByIndex(idx);
+    })
+    UziCode.on("change", focus => {
       saveToLocalStorage();
-
+      
       if (focus) {
         dirtyCode = true;
         dirtyBlocks = false;
-
         scheduleAutorun(false, "CODE CHANGE!");
-      }
-    });
-
-    Uzi.on("update", function (state, previousState) {
-      if (focus) return; // Don't change the code while the user is editing!
-      if (state.program.type == "uzi") return; // Ignore textual programs
-      if (codeEditor.getValue() !== "" &&
-          state.program.src == previousState.program.src) return;
-
-      let src = state.program.src;
-      if (src == undefined) return;
-      if (codeEditor.getValue() !== src) {
-        codeEditor.setValue(src, 1);
       }
     });
   }
 
   function initializeOutputPanel() {
-    Uzi.on("update", function () {
+    Uzi.on("update", () => {
       Uzi.state.output.forEach(appendToOutput);
       Uzi.state.output = [];
     });
 
-    i18n.on("change", function () {
+    i18n.on("change", () => {
       $("#output-console").html("");
       let temp = outputHistory;
       outputHistory = [];
@@ -362,6 +423,11 @@ const fs = require('fs');
   function initializePlotterPanel() {
     Plotter.init();
     Uzi.on("update", Plotter.update);
+  }
+
+  function initializeDebuggerPanel() {
+    Debugger.init();
+    Uzi.on("update", Debugger.update);
   }
 
   function initializeAutorun() {
@@ -379,17 +445,17 @@ const fs = require('fs');
   }
 
   function initializeBrokenLayoutErrorModal() {
-    $("#fix-broken-layout-button").on("click", function () {
-      LayoutManager.reset();
+    $("#fix-broken-layout-button").on("click", () => {
+      restoreLayout();
       $("#broken-layout-modal").modal("hide");
     });
   }
 
   function initializeServerNotFoundErrorModal() {
-    Uzi.on("server-disconnect", function () {
+    Uzi.on("server-disconnect", () => {
       $("#server-not-found-modal").modal('show');
     });
-    setInterval(function () {
+    setInterval(() => {
       if (Uzi.serverAvailable) {
         $("#server-not-found-modal").modal('hide');
       }
@@ -397,14 +463,17 @@ const fs = require('fs');
   }
 
   function initializeOptionsModal() {
-    $("#restore-layout-button").on("click", LayoutManager.reset);
+    $("#interface-checkbox").on("change", updateInterface);
+    $("#restore-layout-button").on("click", restoreLayout);
     $("#uzi-syntax-checkbox").on("change", updateUziSyntax);
     $("#all-caps-checkbox").on("change", updateAllCaps);
-    if (!fs) {
-      $("#autosave-checkbox").attr("disabled", "disabled");
-    } else {
-      $("#autosave-checkbox").on("change", toggleAutosave);
-    }
+    $("#controls-panel-checkbox").on("change", () => updatePanel("controls"));
+    $("#inspector-panel-checkbox").on("change", () => updatePanel("inspector"));
+    $("#blocks-panel-checkbox").on("change", () => updatePanel("blocks"));
+    $("#code-panel-checkbox").on("change", () => updatePanel("code"));
+    $("#plotter-panel-checkbox").on("change", () => updatePanel("plotter"));
+    $("#output-panel-checkbox").on("change", () => updatePanel("output"));
+    $("#debugger-panel-checkbox").on("change", () => updatePanel("debugger"));
 
     $('input[name="language-radios"]:radio').change(function () {
       i18n.currentLocale(this.value);
@@ -422,10 +491,19 @@ const fs = require('fs');
   }
 
   function updateVisiblePanelsInOptionsModal() {
-    $('input[name="layout-panels"]').each(function () {
+    $('input[name^="layout-panels"]').each(function () {
       let panelId = $(this).val();
       $(this).prop("checked", $(panelId).is(":visible"));
     });
+  }
+
+  function updatePanel(name) {
+    let panelId = "#" + name + "-panel";
+    if ($(panelId + "-checkbox").get(0).checked){
+      LayoutManager.showPanel(name);
+    } else {
+      LayoutManager.hidePanel(name);
+    }
   }
 
   function checkBrokenLayout() {
@@ -438,18 +516,17 @@ const fs = require('fs');
   }
 
   function appendToOutput(entry) {
-    // Remember the entry in case we need to update the panel (up to a fixed limit)
-    if (outputHistory.length == 100) { outputHistory.shift(); }
-    outputHistory.push(entry);
 
     // Translate and format the message
     let type = entry.type || "info";
     let args = entry.args || [];
     let regex = /%(\d+)/g;
-    let text = i18n.translate(entry.text).replace(regex, function (m, i) {
+    let text = i18n.translate(entry.text).replace(regex, (m, i) => {
       let arg = args[parseInt(i) - 1];
       return arg || m;
     });
+    entry["text"] = text;
+    ToastMessageBox.show(entry);
 
     // Append element
     let css = {
@@ -470,11 +547,7 @@ const fs = require('fs');
 
   function resizePanels() {
     UziBlock.resizeWorkspace();
-
-    if (codeEditor) {
-      codeEditor.resize(true);
-    }
-
+    UziCode.resizeEditor();
     Plotter.resize();
   }
 
@@ -559,18 +632,15 @@ const fs = require('fs');
     localStorage["uzi.code"] = ui.code;
     localStorage["uzi.ports"] = JSONX.stringify(ui.ports);
 
-    if ($("#autosave-checkbox").get(0).checked && $("#file-name").text()) {
-      saveProject();
-    }
   }
 
   function getUIState() {
     return {
       settings: {
-        autosave:    $("#autosave-checkbox").get(0).checked,
-        interactive: $("#interactive-checkbox").get(0).checked,
-        allcaps:     $("#all-caps-checkbox").get(0).checked,
-        uziSyntax:   $("#uzi-syntax-checkbox").get(0).checked,
+        // interactive: $("#interactive-checkbox").get(0).checked,
+        allcaps:      $("#all-caps-checkbox").get(0).checked,
+        uziSyntax:    $("#uzi-syntax-checkbox").get(0).checked,
+        advInterface: $("#interface-checkbox").get(0).checked,
       },
       fileName:  $("#file-name").text() || "",
       layout: LayoutManager.getLayoutConfig(),
@@ -586,25 +656,28 @@ const fs = require('fs');
   function setUIState(ui) {
     try {
       if (ui.settings != undefined) {
-        $("#autosave-checkbox").get(0).checked    = ui.settings.autosave;
-        $("#interactive-checkbox").get(0).checked = ui.settings.interactive;
+        // $("#interactive-checkbox").get(0).checked = ui.settings.interactive;
         $("#all-caps-checkbox").get(0).checked    = ui.settings.allcaps;
         $("#uzi-syntax-checkbox").get(0).checked  = ui.settings.uziSyntax;
+        $("#interface-checkbox").get(0).checked   = ui.settings.advInterface;
       } else {
-        $("#autosave-checkbox").get(0).checked    = false;
-        $("#interactive-checkbox").get(0).checked = true;
+        // $("#interactive-checkbox").get(0).checked = true;
         $("#all-caps-checkbox").get(0).checked    = false;
         $("#uzi-syntax-checkbox").get(0).checked  = false;
+        $("#interface-checkbox").get(0).checked   = false;
       }
       updateAllCaps();
       updateUziSyntax();
+      updateInterface();
 
       if (ui.fileName != undefined) {
         $("#file-name").text(ui.fileName);
       }
 
       if (ui.layout != undefined) {
-        LayoutManager.setLayoutConfig(ui.layout);
+        if (Uzi.state.features["persistent-layout?"]) {
+          LayoutManager.setLayoutConfig(ui.layout);
+        }
       }
 
       if (ui.blockly != undefined) {
@@ -612,8 +685,7 @@ const fs = require('fs');
       }
 
       if (ui.code != undefined) {
-        codeEditor.setValue(ui.code);
-        dirtyCode = true;
+        dirtyCode = UziCode.setProgram(ui.code);
       }
 
       if (ui.ports != undefined) {
@@ -626,6 +698,7 @@ const fs = require('fs');
     }
   }
 
+  
   function submitProject() {
     MessageBox.confirm("Trabajo terminado",
                        "Presiona aceptar para mandar el trabajo a la cola").then(ok => {
@@ -636,6 +709,18 @@ const fs = require('fs');
         };
         Mendieta.submit(program)
           .catch(err => MessageBox.alert("ERROR", err.toString()));
+      }
+    });
+  }
+
+  function newProject() {
+    MessageBox.confirm(i18n.translate("Beware!"),
+                       i18n.translate("You will lose all your unsaved changes. Are you sure?"),
+                       MessageBox.ICONS.warning).then(ok => {
+      if (ok) {
+        $("#file-name").text("");
+    		UziBlock.getWorkspace().clear();
+        scheduleAutorun(true, "NEW PROJECT!");
       }
     });
   }
@@ -658,15 +743,14 @@ const fs = require('fs');
     }
 
     if (code != undefined) {
-      codeEditor.setValue(code);
-      dirtyCode = true;
+      dirtyCode = UziCode.setProgram(code);
     }
 
     if (!dirtyBlocks) {
       UziBlock.getWorkspace().clear();
     }
     if (!dirtyCode) {
-      codeEditor.setValue("");
+      UziCode.clearEditor();
     }
   }
 
@@ -688,7 +772,7 @@ const fs = require('fs');
       } catch (err) {
         errorHandler(err);
     		UziBlock.getWorkspace().clear();
-        codeEditor.setValue("");
+        UziCode.clearEditor();
         $("#file-name").text("");
         scheduleAutorun(true, "OPEN PROJECT!");
       }
@@ -698,7 +782,7 @@ const fs = require('fs');
       dialog.showOpenDialog({
         filters: [{name: "Physical Bits project", extensions: ["phb"]}],
         properties: ["openFile"]
-      }).then(function (response) {
+      }).then(response => {
         if (!response.canceled) {
           let path = response.filePaths[0];
           fs.promises.readFile(path, "utf8")
@@ -737,7 +821,7 @@ const fs = require('fs');
       defaultPath: $("#file-name").text() || "program.phb",
       filters: [{name: "Physical Bits project", extensions: ["phb"]}],
       properties: ["openFile"]
-    }).then(function (response) {
+    }).then(response => {
       if (!response.canceled) {
         let path = response.filePath;
         $("#file-name").text(path);
@@ -782,46 +866,64 @@ const fs = require('fs');
   function setSelectedPort(val) {
     selectedPort = val;
     if ($("#port-dropdown option[value='" + selectedPort + "']").length <= 0) {
-      $("<option>")
-        .text(selectedPort)
-        .attr("value", selectedPort)
-        .insertBefore("#port-dropdown-divider");
+      // HACK(Richo): Add the special "simulator" option in case it wasn't there
+      if (val == "simulator") {
+        $("<option>")
+          .text("Simulator")
+          .attr("value", selectedPort)
+          .attr("lang", "en")
+          .insertBefore("#port-dropdown-divider");
+        i18n.updateUI();
+      } else {
+        $("<option>")
+          .text(selectedPort)
+          .attr("value", selectedPort)
+          .insertBefore("#port-dropdown-divider");
+      }
     }
     $("#port-dropdown").val(selectedPort);
   }
 
   function connect() {
-    connecting = true;
-    $("#connect-button").attr("disabled", "disabled");
-    $("#port-dropdown").attr("disabled", "disabled");
-    if (selectedPort == "automatic") {
-      let availablePorts = Uzi.state.connection.availablePorts;
-      if (availablePorts.length == 0) {
-        appendToOutput({text: "No available ports found", type: "error"});
-        connecting = false;
-        updateTopBar();
-      } else {
-        attemptConnection(availablePorts);
-      }
+    if (DEMO && selectedPort != "simulator") {
+      MessageBox.alert("DEMO version", "The functionality you requested is not implemented in the DEMO version. Please download Physical Bits to enjoy all its capabilities");
+      return Promise.reject("DEMO version does not support arbitrary connections");
     } else {
-      Uzi.connect(selectedPort).finally(function () {
-        connecting = false;
-        updateTopBar();
-      });
+      connecting = true;
+      $("#connect-button").attr("disabled", "disabled");
+      $("#port-dropdown").attr("disabled", "disabled");
+      if (selectedPort == "automatic") {
+        let availablePorts = Uzi.state.connection.availablePorts;
+        if (availablePorts.length == 0) {
+          appendToOutput({text: "No available ports found", type: "error"});
+          connecting = false;
+          updateTopBar();
+          return Promise.reject("No available ports found");
+        } else {
+          return attemptConnection(availablePorts);
+        }
+      } else {
+        return Uzi.connect(selectedPort).finally(() => {
+          connecting = false;
+          updateTopBar();
+        });
+      }
     }
   }
 
   function attemptConnection(availablePorts) {
     let port = availablePorts.shift();
-    Uzi.connect(port).then(data => {
-      if (data["port-name"] == port) {
+    return Uzi.connect(port).then(data => {
+      if (data == port) {
         selectedPort = port;
         if (selectedPort) { saveToLocalStorage(); }
         connecting = false;
+        return port;
       } else if (availablePorts.length > 0) {
-        attemptConnection(availablePorts);
+        return attemptConnection(availablePorts);
       } else {
         connecting = false;
+        return null;
       }
     }).catch(() => { connecting = false; });
   }
@@ -838,35 +940,71 @@ const fs = require('fs');
   function evalProgramFn(fn) {
     let program = lastProgram.code;
     let type = lastProgram.type;
-    fn(program, type).then(success).catch(error);
+    return fn(program, type).then(success).catch(error);
   }
 
   function verify() {
     evalProgramFn(Uzi.compile);
   }
 
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // HACK(Richo): I can't use the "connecting" flag so I added a new flag
+  let waiting = false;
+  
   function run() {
-    evalProgramFn(Uzi.run);
+    if (Uzi.state.features["interactivity?"]) {
+      evalProgramFn(Uzi.run);
+    } else {
+      if (waiting) return;
+      waiting = true;
+      connect()
+        .then(port => port ? evalProgramFn(Uzi.run) : null)
+        .then(() => delay(1000))
+        .then(() => disconnect())
+        .finally(() => waiting = false);
+    }
   }
 
   function install() {
-    evalProgramFn(Uzi.install);
+    if (Uzi.state.features["interactivity?"]) {
+      evalProgramFn(Uzi.install);
+    } else {
+      if (waiting) return;
+      waiting = true;
+      connect()
+        .then(port => port ? evalProgramFn(Uzi.install) : null)
+        .then(() => delay(1000))
+        .then(() => disconnect())
+        .finally(() => waiting = false);
+    }
   }
 
-  function toggleInteractive() {
-    scheduleAutorun($("#interactive-checkbox").get(0).checked,
-                    "TOGGLE INTERACTIVE!");
-    saveToLocalStorage();
-  }
-
-  function toggleAutosave() {
-    saveToLocalStorage();
+  function restoreLayout() {
+    let checked = $("#interface-checkbox").get(0).checked;
+    LayoutManager.reset(checked);
   }
 
   function updateUziSyntax() {
     let checked = $("#uzi-syntax-checkbox").get(0).checked;
     UziBlock.setUziSyntax(checked);
+    saveToLocalStorage();
+  }
 
+  function updateInterface() {
+    let checked = $("#interface-checkbox").get(0).checked;
+    if (checked){
+      UziBlock.setAdvancedToolbox();
+      LayoutManager.setAdvancedContent();
+    } else {
+      UziBlock.setBasicToolbox();
+      LayoutManager.setBasicContent();
+    }
+    $('input[name="layout-panels-advanced"]').each(function () {
+      $(this).attr("disabled", checked? null: "disabled");
+    })
     saveToLocalStorage();
   }
 
@@ -928,6 +1066,7 @@ const fs = require('fs');
 
 	function autorun() {
     if (Uzi.state == undefined) return Promise.resolve();
+    if (Uzi.state.debugger.isHalted) return Promise.resolve();
 		if (autorunNextTime === undefined) return Promise.resolve();
 
 		let currentTime = +new Date();
@@ -960,7 +1099,8 @@ const fs = require('fs');
     }
 
     let connected = Uzi.state.connection.isConnected;
-    let interactive = $("#interactive-checkbox").get(0).checked;
+    let interactive = true; //$("#interactive-checkbox").get(0).checked;
+    interactive &= Uzi.state.features["interactivity?"];
     let action = connected && interactive ? Uzi.run : Uzi.compile;
     let actionName = action.name.toUpperCase();
 
@@ -988,7 +1128,7 @@ const fs = require('fs');
 
   function getTextualCode() {
     try {
-      return codeEditor.getValue();
+      return UziCode.getProgram();
     } catch (err) {
       console.log(err);
       return "";
@@ -1016,6 +1156,20 @@ const fs = require('fs');
       $("#install-button").attr("disabled", "disabled");
       updatePortDropdown();
     }
+
+    if (!Uzi.state.features["interactivity?"]) {
+      $("#disconnect-button").hide();
+      $("#connect-button").hide();
+      $("#run-button").attr("disabled", null);
+      $("#more-buttons").attr("disabled", null);
+      $("#install-button").attr("disabled", null);
+    }
+      
+
+    if (DEMO) {
+      $("#port-dropdown").attr("disabled", "disabled");
+      setSelectedPort("simulator");
+    }
   }
 
   function updatePortDropdown() {
@@ -1038,20 +1192,19 @@ const fs = require('fs');
     setSelectedPort(selectedPort);
   }
 
-  function updateInspectorPanel() {
-    updatePinsPanel();
-    updateGlobalsPanel();
+  function updateInspectorPanel(editing) {
+    updatePinsPanel(editing);
+    updateGlobalsPanel(editing);
     updateTasksPanel();
-    updateMemoryPanel();
     updatePseudoVarsPanel();
   }
 
-  function updatePinsPanel() {
-    updateValuesPanel(Uzi.state.pins, $("#pins-table tbody"), $("#no-pins-label"), "pin");
+  function updatePinsPanel(editing) {
+    updateValuesPanel(Uzi.state.pins, $("#pins-table tbody"), $("#no-pins-label"), "pin", editing, Uzi.setPinValues);
   }
 
-  function updateGlobalsPanel() {
-    updateValuesPanel(Uzi.state.globals, $("#globals-table tbody"), $("#no-globals-label"), "global");
+  function updateGlobalsPanel(editing) {
+    updateValuesPanel(Uzi.state.globals, $("#globals-table tbody"), $("#no-globals-label"), "global", editing, Uzi.setGlobalValues);
   }
 
   function updatePseudoVarsPanel() {
@@ -1064,14 +1217,14 @@ const fs = require('fs');
     }
   }
 
-  function updateValuesPanel(values, $container, $emptyLabel, itemPrefix) {
+  function updateValuesPanel(values, $container, $emptyLabel, itemPrefix, editing, updateFn) {
     if (!Uzi.state.connection.isConnected) {
       // NOTE(Richo): If we're not connected we simply clear the panel
       values = { available: [], elements: [] };
     }
 
     let reporting = new Set();
-    values.available.forEach(function (val) {
+    values.available.forEach(val => {
       if (val.reporting) { reporting.add(val.name); }
     });
 
@@ -1092,7 +1245,7 @@ const fs = require('fs');
 
     function initializePanel() {
       $container.html("");
-      values.available.forEach(function (val) {
+      values.available.forEach(val => {
         if (val.reporting) {
           let $row = $("<tr>")
             .append($("<td>")
@@ -1103,13 +1256,45 @@ const fs = require('fs');
                 .attr("id", getEyeId(val))
                 .on("click", () => Plotter.toggle(val.name))))
             .append($("<td>")
-              .text(val.name))
-            .append($("<td>")
+              .text(val.name));
+          let $value = $("<td>")
               .addClass("text-right")
               .addClass("pr-4")
               .addClass("text-muted")
               .attr("id", getElementId(val))
-              .text("?"));
+              .text("?");
+          if (editing != null) {            
+            $value.attr("contenteditable", "true")
+            $value.on("focus", () => {
+              editing.add(val.name);
+              $value.removeClass("text-muted");
+            });
+            $value.on("blur", () => editing.delete(val.name));
+            $value.on("keydown", function (evt) {
+              /*
+              NOTE(Richo): If the user presses either Enter (13) or Tab (9) we update the value
+              */
+              if (13 == evt.keyCode || 9 == evt.keyCode) {
+                let new_value = parseFloat(this.innerText);
+                if (isFinite(new_value) && updateFn) {
+                  try {
+                    updateFn([val.name], [new_value]);
+                  } catch(err) {
+                    console.error(err);
+                  }
+                }
+              }
+              /*
+              NOTE(Richo): Additionally, if the user presses Enter (13) we prevent the
+              default event behavior and blur the input to simulate a "submit" event
+              */
+              if (13 == evt.keyCode) {
+                evt.preventDefault();
+                $value.blur();
+              }
+            });
+          }
+          $row.append($value);
           $container.append($row);
         }
       });
@@ -1125,11 +1310,14 @@ const fs = require('fs');
       initializePanel();
     }
 
-    values.elements.forEach(function (val) {
+    values.elements.forEach(val => {
       let $eye = getEye(val);
       $eye.css("color", Plotter.colorFor(val.name) || "white");
 
       if (reporting.has(val.name)) {
+        // Ignore this element if we're editing its value
+        if (editing && editing.has(val.name)) return;
+        
         let $item = getElement(val);
         if ($item.get(0) == undefined) { initializePanel(); }
 
@@ -1163,7 +1351,7 @@ const fs = require('fs');
       }
     });
 
-    values.available.forEach(function (val) {
+    values.available.forEach(val => {
       if (!reporting.has(val.name)) {
         let $item = getElement(val);
         if ($item != undefined) { $item.parent().remove(); }
@@ -1198,16 +1386,6 @@ const fs = require('fs');
           .append($("<td>")
             .addClass(css)
             .html(html)));
-    }
-  }
-
-  function updateMemoryPanel() {
-    if (Uzi.state.connection.isConnected) {
-      $("#arduino-memory").text(Uzi.state.memory.arduino);
-      $("#uzi-memory").text(Uzi.state.memory.uzi);
-    } else {
-      $("#arduino-memory").text("?");
-      $("#uzi-memory").text("?");
     }
   }
 

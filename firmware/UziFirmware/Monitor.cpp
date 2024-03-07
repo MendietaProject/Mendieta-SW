@@ -2,7 +2,7 @@
 
 /* VERSION NUMBER */
 #define MAJOR_VERSION                                       0
-#define MINOR_VERSION                                       8
+#define MINOR_VERSION                                      11
 
 /* INCOMING */
 #define MSG_IN_CONNECTION_REQUEST                         255
@@ -28,7 +28,7 @@
 #define MSG_OUT_PROFILE                                     2
 #define MSG_OUT_GLOBAL_VALUE                                3
 #define MSG_OUT_TRACE                                       4
-#define MSG_OUT_COROUTINE_STATE                             5
+#define MSG_OUT_DEBUGGER		                            5
 #define MSG_OUT_TICKING_SCRIPTS                             6
 #define MSG_OUT_FREE_RAM                                    7
 #define MSG_OUT_SERIAL_TUNNEL                               8
@@ -53,6 +53,56 @@ void Monitor::loadInstalledProgram(Program** program)
 		uzi_memreset();
 		*program = uzi_create(Program);
 	}
+}
+
+
+
+void Monitor::loadHardcodedProgram(Program** program)
+{
+	Program* p = uzi_create(Program);
+	p->scriptCount = 1;
+	p->globalCount = 5;
+	
+	p->globals = uzi_createArray(float, p->globalCount);
+	p->globals[0] = 63;
+	p->globals[1] = 16;
+	p->globals[2] = 2;
+	p->globals[3] = 0;
+	p->globals[4] = 6;
+
+
+	p->scripts = uzi_createArray(Script, p->scriptCount);
+	p->scripts[0].index = 0;
+	p->scripts[0].interval = 0;
+	p->scripts[0].running = true;
+	p->scripts[0].type = 0;
+	p->scripts[0].argCount = 0;
+
+	p->scripts[0].instructionCount = 8;
+
+	p->instructions = uzi_createArray(Instruction, p->scripts[0].instructionCount);
+	p->instructions[0].opcode = READ_GLOBAL;
+	p->instructions[0].data = 0;
+	p->instructions[1].opcode = READ_GLOBAL;
+	p->instructions[1].data = 1;
+	p->instructions[2].opcode = READ_GLOBAL;
+	p->instructions[2].data = 2;
+	
+	p->instructions[3].opcode = PRIM_LCD_INIT0;
+	p->instructions[4].opcode = PRIM_LCD_INIT1;
+
+	p->instructions[5].opcode = READ_GLOBAL;
+	p->instructions[5].data = 3;
+
+	p->instructions[6].opcode = READ_GLOBAL;
+	p->instructions[6].data = 3;
+
+	p->instructions[7].opcode = PRIM_LCD_PRINT_STRING;
+
+	p->strings = "RICHO_VICKY";
+	p->strings[5] = 0;
+
+	*program = p;
 }
 
 void Monitor::initSerial(UziSerial* s)
@@ -110,6 +160,7 @@ void Monitor::acceptConnection()
 
 	minReportInterval = 0;
 	reportInterval = 25;
+	sentVMState = false;
 	state = CONNECTED;
 
 	executeKeepAlive();
@@ -192,9 +243,9 @@ void Monitor::sendReport(GPIO* io, Program* program)
 
 void Monitor::sendVMState(Program* program, VM* vm)
 {
-	if (vm->halted && !sent)
+	if (vm->halted && !sentVMState)
 	{
-		sent = true;
+		sentVMState = true;
 		sendCoroutineState(program, vm->haltedScript);
 
 		/*
@@ -218,7 +269,7 @@ void Monitor::sendCoroutineState(Program* program, Script* script)
 			sendError(coroutine->getError());
 			program->resetCoroutine(coroutine); // TODO(Richo): Why?
 		}
-		serial->write(MSG_OUT_COROUTINE_STATE);
+		serial->write(MSG_OUT_DEBUGGER);
 		serial->write(scriptIndex);
 		int16 pc = coroutine->getPC();
 		uint8 val1 = pc >> 8 & 0xFF; // MSB
@@ -402,7 +453,9 @@ void Monitor::executeCommand(Program** program, GPIO* io, VM* vm)
 	case MSG_IN_SET_PROGRAM:
 		// TODO(Richo): Refactor this. I added it because the VM state must be reset if the program changes!
 		vm->reset();
+		sentVMState = false;
 		executeSetProgram(program, io);
+		vm->halted = true;
 		break;
 	case MSG_IN_SET_VALUE:
 		executeSetValue(io);
@@ -422,6 +475,7 @@ void Monitor::executeCommand(Program** program, GPIO* io, VM* vm)
 	case MSG_IN_SAVE_PROGRAM:
 		// TODO(Richo): Refactor this. I added it because the VM state must be reset if the program changes!
 		vm->reset();
+		sentVMState = false;
 		executeSaveProgram(program, io);
 		break;
 	case MSG_IN_PROFILE:
@@ -601,7 +655,7 @@ void Monitor::executeSetGlobalReport(Program* program)
 void Monitor::executeDebugContinue(VM* vm)
 {
 	vm->halted = false;
-	sent = false;
+	sentVMState = false;
 }
 
 void Monitor::executeDebugSetBreakpoints(Program* program)

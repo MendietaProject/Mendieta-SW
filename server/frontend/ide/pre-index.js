@@ -22,7 +22,6 @@ function showCurrentActivity(activity) {
 }
 
 const button = document.getElementById("BotStart");
-const labelName = document.getElementById("labelText");
 let loadStudentsTimer = true;
 startStudentsTimer();
 
@@ -30,11 +29,6 @@ startStudentsTimer();
 button.addEventListener("click", () => {
   document.getElementById("pre").style.display = "none";
   loadStudentsTimer = false;
-});
-
-labelName.addEventListener("keyup", () => {
-  button.disabled = labelName.value == "" || labelName.value.length > 15;
-  console.log("en teoria esta listo");
 });
 
 function startStudentsTimer() {
