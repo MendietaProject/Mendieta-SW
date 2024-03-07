@@ -98,33 +98,13 @@
     </div>
     <div id="hidden-panels" style="display: none;">
       <div id="controls-panel" class="container small-panel">
-        <button id="submit-button" type="button" class="btn btn-primary btn-block mt-2">
-          <i class="far fa-paper-plane"></i>
-          <span lang="en">Submit</span>
-        </button>            
-        <div id="turn-notifier">
-          <div class="py-3 my-1 bg-danger container-fluid">
-            <h4>Es tu turno de usar el robot</h4><div class="row h5">
-              <div class="col-auto font-weight-light">Tiempo restante:</div>
-              <div id="turn-notifier-timer" class="col-auto font-weight-normal">00:00</div>
-            </div><div class="row h3 font-weight-light">            
-            </div>          
-          </div>
-          <div class="btn-group">
-            <button id="turn-notifier-start-button" type="submit" class="btn btn-primary">
-              <i class="fas fa-play mr-1"></i>
-              Iniciar
-            </button>
-            <button id="turn-notifier-pause-button" type="button" class="btn btn-secondary" disabled>
-              <i class="fas fa-pause mr-1"></i>
-              Pausar
-            </button>
-            <button id="turn-notifier-stop-button" type="button" class="btn btn-secondary">
-              <i class="fas fa-stop mr-1"></i>
-              <span>Detener</span>
-            </button>
-          </div>
-      </div>
+        <form>
+          
+          <button id="submit-button" type="button" class="btn btn-primary btn-sm">
+            <i class="far fa-paper-plane"></i>
+            <span lang="en">Submit</span>
+          </button>
+        </form>
       </div>
       <div id="inspector-panel" class="container small-panel">
         <div style="font-size: small;">
@@ -614,6 +594,51 @@
           <div class="modal-footer">
             <button id="msg-box-accept-button" type="submit" class="btn btn-primary" lang="en">Accept</button>
             <button id="msg-box-cancel-button" type="button" class="btn btn-secondary" lang="en">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Turn notifier Modal -->
+    <div class="modal fade" id="turn-notifier-modal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              <i class="fas fa-exclamation-circle"></i>
+              <span class="ml-2">Es tu turno de usar el robot</span>
+            </h4>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class="row h3 font-weight-light">
+                <p class="col">Acomodá el robot en su posición de inicio y cuando estés listo presioná el botón "Iniciar".</p>
+              </div>
+              <div class="row justify-content-end h2">
+                <div class="col-auto font-weight-light">Tiempo restante:</div>
+                <div id="turn-notifier-timer" class="col-auto font-weight-normal">00:00</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="turn-notifier-start-button" type="submit" class="btn btn-primary">
+              <i class="fas fa-play mr-1"></i>
+              Iniciar
+            </button>
+            <button id="turn-notifier-pause-button" type="button" class="btn btn-secondary" disabled>
+              <i class="fas fa-pause mr-1"></i>
+              Pausar
+            </button>
+            <button id="turn-notifier-stop-button" type="button" class="btn btn-secondary">
+              <i class="fas fa-stop mr-1"></i>
+              <span>Detener</span>
+            </button>
+
+            <button id="turn-notifier-cancel-button" type="button" class="btn btn-secondary">
+              <i class="fas fa-times mr-1"></i>
+              <span>Cancelar</span>
+            </button>
           </div>
         </div>
       </div>
